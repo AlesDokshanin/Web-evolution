@@ -7,15 +7,16 @@ import java.util.Random;
 
 public class Web {
 
-    private static int skeletonSides = 8;
+    private static int skeletonSides = 10;
+
     public void setSkeletonSides(int sides) throws IllegalArgumentException {
-        if(sides <= 2)
+        if (sides <= 2)
             throw new IllegalArgumentException("Number of web skeleton's sides should be more than 2.");
         skeletonSides = sides;
     }
 
 
-    ArrayList<Point> innerLinesCoors;
+    ArrayList<Point> innerLinesCoords;
     ArrayList<Point> skeletonCoords;
 
     int generation = 0;
@@ -23,7 +24,9 @@ public class Web {
 
     private int width;
     private int height;
+    private int minDistance;
     private Point center;
+    private double minAngleBetweenSkeletonLines;
 
     private class PolarPoint implements Comparable<PolarPoint> {
         public double angle;
@@ -35,7 +38,7 @@ public class Web {
         }
 
         public Point getCartesianPoint() {
-            return new Point((int)(Math.cos(angle) * distance), (int)(Math.sin(angle) * distance));
+            return new Point((int) (Math.cos(angle) * distance), (int) (Math.sin(angle) * distance));
         }
 
         @Override
@@ -45,10 +48,12 @@ public class Web {
     }
 
     public Web(int width, int height) {
-        innerLinesCoors = new ArrayList<Point>();
+        innerLinesCoords = new ArrayList<Point>();
         skeletonCoords = new ArrayList<Point>();
         this.width = width;
         this.height = height;
+        minDistance = Math.min(height, width) / 5;
+        minAngleBetweenSkeletonLines = 2 * Math.PI / (3 * skeletonSides);
 
         center = new Point(width / 2, height / 2);
         generate();
@@ -60,41 +65,73 @@ public class Web {
     }
 
     private void generateInnerLines() {
-        innerLinesCoors.clear();
+        innerLinesCoords.clear();
     }
 
     private void generateSkeleton() {
         skeletonCoords.clear();
 
+        Random r = new Random();
+
         ArrayList<PolarPoint> skeletonPolarPoints = new ArrayList<PolarPoint>();
         for (int i = 0; i < skeletonSides; i++) {
-            Random r = new Random();
-            double angle = r.nextDouble() * 2 * Math.PI; // Generate angle in range [0, 2 * PI]
-            int distance_min = Math.min(width, height) / 5;
-            int distance_max = 0;
-            Point bound;
-            while(distance_max <= distance_min) {
-                bound = new Point((int) (0.5 * width * Math.cos(angle)),(int) (0.5 * height * Math.sin(angle)));
-                distance_max = (int) bound.distance(0, 0);
-            }
-            int distance = (int) (distance_min + (distance_max - distance_min) * r.nextDouble());
-
-            // TODO prevent generating points close to each other and with same (almost) angle.
-            skeletonPolarPoints.add(new PolarPoint(angle, distance));
+            PolarPoint p = generateSkeletonPoint(r);
+            while(!skeletonPointIsValid(p, skeletonPolarPoints))
+                p = generateSkeletonPoint(r);
+            skeletonPolarPoints.add(p);
         }
 
         Collections.sort(skeletonPolarPoints);
-        for(int i = 0; i < skeletonPolarPoints.size(); i++) {
+        for (int i = 0; i < skeletonPolarPoints.size(); i++) {
             Point p = skeletonPolarPoints.get(i).getCartesianPoint();
             p.x += center.x;
             p.y += center.y;
             skeletonCoords.add(p);
         }
 
-        Polygon skeleton = getPolygonFromPointsArray(skeletonCoords);
-        if(!skeleton.contains(center)) {
+        if (!skeletonIsValid()) {
             generateSkeleton();
         }
+    }
+
+    private PolarPoint generateSkeletonPoint(Random random) {
+        double angle = random.nextDouble() * 2 * Math.PI; // Generate angle in range [0, 2 * PI]
+        int maxDistance = 0;
+        Point bound;
+
+        while (maxDistance <= minDistance) {
+            bound = new Point((int) (0.5 * width * Math.cos(angle)), (int) (0.5 * height * Math.sin(angle)));
+            maxDistance = (int) bound.distance(0, 0);
+        }
+
+        int distance = (int) (minDistance + (maxDistance - minDistance) * random.nextDouble());
+        return new PolarPoint(angle, distance);
+    }
+
+    private boolean skeletonPointIsValid(PolarPoint p, ArrayList<PolarPoint> list) {
+        for(PolarPoint listPoint : list) {
+            if(Math.abs(p.angle - listPoint.angle) < minAngleBetweenSkeletonLines)
+                return false;
+            int distance = (int) (p.getCartesianPoint().distance(listPoint.getCartesianPoint()));
+            if(distance <= minDistance)
+                return false;
+        }
+        return true;
+    }
+
+    private boolean skeletonIsValid() {
+        Polygon skeleton = getPolygonFromPointsArray(skeletonCoords);
+        int shift = Math.min(width, height) / 10;
+        for (int dx = -1; dx <= 1; dx++) {
+            for (int dy = -1; dy <= 1; dy++) {
+                Point p = new Point(center.x + dx * shift, center.y + dy * shift);
+                if (!skeleton.contains(p)) {
+                    return false;
+                }
+            }
+        }
+
+        return true;
     }
 
     void draw(Graphics2D g) {
@@ -111,13 +148,13 @@ public class Web {
         Polygon polygon = getPolygonFromPointsArray(skeletonCoords);
         g.drawPolygon(polygon);
 
-        for(Point p : skeletonCoords) {
+        for (Point p : skeletonCoords) {
             g.fillOval(p.x - 5, p.y - 5, 10, 10);
         }
     }
 
-    private void drawLines(Graphics2D g){
-        Polygon p = getPolygonFromPointsArray(innerLinesCoors);
+    private void drawLines(Graphics2D g) {
+        Polygon p = getPolygonFromPointsArray(innerLinesCoords);
         g.drawPolygon(p);
     }
 
@@ -125,7 +162,7 @@ public class Web {
         int[] xPoints = new int[list.size()];
         int[] yPoints = new int[list.size()];
 
-        for(int i = 0; i < list.size(); i++){
+        for (int i = 0; i < list.size(); i++) {
             xPoints[i] = list.get(i).x;
             yPoints[i] = list.get(i).y;
         }
