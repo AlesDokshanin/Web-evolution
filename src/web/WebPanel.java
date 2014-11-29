@@ -18,7 +18,9 @@ public class WebPanel extends JPanel {
     private Web web;
 
     public WebPanel() {
-        web = new Web(PANEL_WIDTH, PANEL_HEIGHT);
+        Web.height = PANEL_HEIGHT;
+        Web.width = PANEL_WIDTH;
+        web = new Web();
         Graphics g = image.getGraphics();
         g.setColor(BG_COLOR);
         g.fillRect(0, 0, PANEL_WIDTH, PANEL_HEIGHT);
@@ -47,6 +49,6 @@ public class WebPanel extends JPanel {
     }
 
     public void resetWeb() {
-        web = new Web(PANEL_WIDTH, PANEL_HEIGHT);
+        web = new Web();
     }
 }

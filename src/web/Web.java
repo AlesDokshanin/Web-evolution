@@ -8,6 +8,15 @@ import java.util.Random;
 public class Web {
 
     private static int skeletonSides = 10;
+    private static int innnerLinesCount = 5;
+
+    public static int width = 600;
+    public static int height = 600;
+    private Point center = new Point(width / 2, height / 2);
+
+    private static double minAngleBetweenSkeletonLines = 2 * Math.PI / (3 * skeletonSides);
+    private static int minSkeletonDistance = Math.min(height, width) / 5;
+    private static int minInnerLineDistance = Math.min(height, width) / 35;
 
     public void setSkeletonSides(int sides) throws IllegalArgumentException {
         if (sides <= 2)
@@ -15,25 +24,20 @@ public class Web {
         skeletonSides = sides;
     }
 
-
     private Polygon skeletonPolygon;
+
     private ArrayList<Polygon> innerLinesPolygons;
 
     private ArrayList<PolarPoint> skeletonPoints;
 
     int generation = 0;
+
     double efficiency = 0;
 
-    private int width;
-    private int height;
-    private int minSkeletonDistance;
-    private int minInnerLineDistance;
-    private Point center;
-    private double minAngleBetweenSkeletonLines;
 
     private class PolarPoint implements Comparable<PolarPoint> {
-        public double angle;
-        public int distance;
+        double angle;
+        int distance;
 
         public PolarPoint(double angle, int distance) {
             this.angle = angle;
@@ -50,13 +54,8 @@ public class Web {
         }
     }
 
-    public Web(int width, int height) {
+    public Web() {
         skeletonPoints = new ArrayList<PolarPoint>();
-        this.width = width;
-        this.height = height;
-        minSkeletonDistance = Math.min(height, width) / 5;
-        minAngleBetweenSkeletonLines = 2 * Math.PI / (3 * skeletonSides);
-        minInnerLineDistance = minSkeletonDistance / 5;
 
         center = new Point(width / 2, height / 2);
         generate();
