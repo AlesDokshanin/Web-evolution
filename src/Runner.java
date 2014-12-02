@@ -9,27 +9,25 @@ public class Runner {
     private JFrame frame;
     private JPanel controlsPanel = new JPanel();
     private WebPanel webPanel = new WebPanel();
-    private JButton btnReset = new JButton("Reset");
-
-    public static void main(String[] args)
-    {
-        javax.swing.SwingUtilities.invokeLater(new Runnable()
-        {
-            public void run()
-            {
-                try
-                {
-                    javax.swing.UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-                }
-                catch(Exception e) { System.err.print(e.toString()); }
-                new Runner();
-            }
-        });
-    }
+    private JButton btnGenerate = new JButton("Generate");
+    private JTextField tfEfficiency = new JTextField();
 
     public Runner() {
         createAndShowUI();
 
+    }
+
+    public static void main(String[] args) {
+        javax.swing.SwingUtilities.invokeLater(new Runnable() {
+            public void run() {
+                try {
+                    javax.swing.UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+                } catch (Exception e) {
+                    System.err.print(e.toString());
+                }
+                new Runner();
+            }
+        });
     }
 
     private void createAndShowUI() {
@@ -45,11 +43,15 @@ public class Runner {
 
     private void setUpControlsPanel() {
         controlsPanel.setLayout(new BoxLayout(controlsPanel, BoxLayout.X_AXIS));
-        controlsPanel.add(btnReset);
-        btnReset.addActionListener(new ActionListener() {
+        controlsPanel.add(btnGenerate);
+        controlsPanel.add(tfEfficiency);
+        tfEfficiency.setText("Efficiency: " + Double.toString(webPanel.getWebEfficiency()));
+
+        btnGenerate.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
                 webPanel.resetWeb();
+                tfEfficiency.setText("Efficiency: " + Double.toString(webPanel.getWebEfficiency()));
                 frame.repaint();
             }
         });

@@ -48,6 +48,10 @@ public class WebPanel extends JPanel {
         g.dispose();
     }
 
+    public double getWebEfficiency() {
+        return web.getEfficiency();
+    }
+
     public void resetWeb() {
         web = new Web();
     }

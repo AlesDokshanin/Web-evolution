@@ -1,44 +1,128 @@
 package web;
 
-import javax.naming.OperationNotSupportedException;
 import java.awt.*;
+import java.awt.geom.Line2D;
+import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Random;
 
 public class Web {
+    public static int width = 600;
+    public static int height = 600;
 
-    private class PolarPoint implements Comparable<PolarPoint> {
-        double angle;
-        int distance;
+    private static Point center = new Point(width / 2, height / 2);
+    private static int minSkeletonDistance = Math.min(height, width) / 5;
+    private static int minSkeletonDistanceFromCenter = 2 * minSkeletonDistance;
+    private static int minInnerCircleDistance = Math.min(height, width) / 50;
+    private static int flySize = Math.min(width, height) / 50;
+    private static int fliesCount = 1000;
+    private static int webSidesCount = 15;
+    private static double minAngleBetweenSkeletonLines = 2 * Math.PI / (3 * webSidesCount);
+    private static double innerCirclesDispersion = 5.0;
+    private static Random random = new Random();
 
-        public PolarPoint(double angle, int distance) {
-            this.angle = angle;
-            this.distance = distance;
+    private int generation = 0;
+    private double efficiency = 0;
+
+    private WebSkeleton skeleton;
+    private ArrayList<WebInnerCircle> innerCircles;
+
+    public Web() {
+        skeleton = new WebSkeleton();
+        innerCircles = new ArrayList<WebInnerCircle>();
+
+        generate();
+        calculateEfficiency();
+    }
+
+    public double getEfficiency() {
+        return efficiency;
+    }
+
+    private void calculateEfficiency() {
+        int caught = 0;
+        for (int i = 0; i < fliesCount; i++) {
+            Fly fly = new Fly();
+            if (fly.gotCaught()) {
+                caught++;
+            }
         }
+        efficiency = (double) caught / fliesCount;
+    }
 
-        public Point getCartesianPoint() {
-            return new Point((int) (Math.cos(angle) * distance), (int) (Math.sin(angle) * distance));
-        }
+    private void generate() {
+        skeleton.generate();
+        generateInnerCircles();
+    }
 
-        @Override
-        public int compareTo(PolarPoint polarPoint) {
-            return Double.compare(angle, polarPoint.angle);
+    private void generateInnerCircles() {
+        innerCircles.clear();
+
+        while(true) {
+            WebInnerCircle circle = new WebInnerCircle();
+            if(circle.fitsToWeb())
+                innerCircles.add(circle);
+            else break;
         }
     }
 
-    private class WebInnerLine {
-        private ArrayList<PolarPoint> list;
-        private Polygon polygon = null;
+    void draw(Graphics2D g) {
+        skeleton.draw(g);
+        drawInnerCircles(g);
+        drawCenterPoint(g);
+    }
 
-        public WebInnerLine() throws OperationNotSupportedException {
+    private void drawCenterPoint(Graphics2D g) {
+        g.fillOval(center.x - 2, center.y - 2, 4, 4);
+    }
+
+    private Polygon getPolygonFromPolarPointsList(ArrayList<PolarPoint> list) {
+        int[] xPoints = new int[list.size()];
+        int[] yPoints = new int[list.size()];
+
+        for (int i = 0; i < list.size(); i++) {
+            Point p = list.get(i).getCartesianPoint();
+            xPoints[i] = p.x;
+            yPoints[i] = p.y;
+        }
+
+        return new Polygon(xPoints, yPoints, list.size());
+    }
+
+    private void drawInnerCircles(Graphics2D g) {
+        for (WebInnerCircle circle : innerCircles)
+            g.drawPolygon(circle.getPolygon());
+    }
+
+    private Polygon getPolygonFromPointsArray(ArrayList<Point> list) {
+        int[] xPoints = new int[list.size()];
+        int[] yPoints = new int[list.size()];
+
+        for (int i = 0; i < list.size(); i++) {
+            xPoints[i] = list.get(i).x;
+            yPoints[i] = list.get(i).y;
+        }
+
+        return new Polygon(xPoints, yPoints, xPoints.length);
+    }
+
+    private class WebInnerCircle {
+        private ArrayList<PolarPoint> list;
+        private Polygon polygon;
+
+        public boolean fitsToWeb() {
+            return fits;
+        }
+
+        private boolean fits = false;
+
+        public WebInnerCircle() {
             list = new ArrayList<PolarPoint>();
-            generateInnerLine();
+            generateInnerCircle();
         }
 
         public Polygon getPolygon() {
-            if (polygon == null)
-                generatePolygon();
             return polygon;
         }
 
@@ -55,200 +139,165 @@ public class Web {
             polygon.translate(center.x, center.y);
         }
 
-        private void generateInnerLine() throws OperationNotSupportedException {
-            Random r = new Random();
-            for (int i = 0; i < skeletonSides; i++) {
-                int lowerBound = minInnerLineDistance;
-                if(!innerLines.isEmpty()) {
-                    lowerBound += innerLines.get(innerLines.size() - 1).list.get(i).distance;
+        private void generateInnerCircle() {
+            for (int i = 0; i < webSidesCount; i++) {
+                int lowerBound = minInnerCircleDistance;
+                if (!innerCircles.isEmpty()) {
+                    lowerBound += innerCircles.get(innerCircles.size() - 1).list.get(i).distance;
                 }
-                int maxDistance = skeletonPoints.get(i).distance - minInnerLineDistance;
+                int maxDistance = skeleton.points.get(i).distance - minInnerCircleDistance;
 
-                if(lowerBound > maxDistance)
-                    throw new OperationNotSupportedException("Can't generate inner line point. Min distance > Max distance ");
+                if (lowerBound > maxDistance) {
+                    fits = false;
+                    return;
+                }
 
-                int upperBound = Math.min(maxDistance, lowerBound + (int) (innerLinesDispersionCoeff * minInnerLineDistance));
-                double angle = skeletonPoints.get(i).angle;
+                int upperBound = Math.min(maxDistance, lowerBound + (int) (innerCirclesDispersion * minInnerCircleDistance));
+                double angle = skeleton.points.get(i).angle;
 
-                int distance = (int) (lowerBound + r.nextDouble() * (upperBound - lowerBound));
+                int distance = (int) (lowerBound + random.nextDouble() * (upperBound - lowerBound));
                 list.add(new PolarPoint(angle, distance));
             }
-            innerLines.add(this);
             generatePolygon();
+            fits = true;
         }
     }
 
-    public static int width = 600;
-    public static int height = 600;
+    private class Fly {
+        private Rectangle2D rect;
 
-    public void setSkeletonSides(int sides) throws IllegalArgumentException {
-        if (sides <= 2)
-            throw new IllegalArgumentException("Number of web skeleton's sides should be more than 2.");
-        skeletonSides = sides;
-    }
-
-    private static int skeletonSides = 10;
-    private static int innnerLinesCount = 5;
-
-    private Point center = new Point(width / 2, height / 2);
-
-    private static double minAngleBetweenSkeletonLines = 2 * Math.PI / (3 * skeletonSides);
-    private static int minSkeletonDistance = Math.min(height, width) / 5;
-    private static int minInnerLineDistance = Math.min(height, width) / 50;
-    private static int minSkeletonDistanceFromCenter = 2 * minSkeletonDistance;
-
-    private static double innerLinesDispersionCoeff = 4.0;
-
-    private Polygon skeletonPolygon;
-    private ArrayList<Polygon> innerLinesPolygons;
-
-    private ArrayList<PolarPoint> skeletonPoints;
-    private ArrayList<WebInnerLine> innerLines;
-
-    int generation = 0;
-
-    double efficiency = 0;
-
-    public Web() {
-        skeletonPoints = new ArrayList<PolarPoint>();
-        innerLines = new ArrayList<WebInnerLine>();
-
-        center = new Point(width / 2, height / 2);
-        generate();
-    }
-
-    private void generate() {
-        generateSkeleton();
-        generateInnerLines();
-    }
-
-    private void generateInnerLines() {
-        innerLines.clear();
-        try {
-            while(true)
-                innerLines.add(new WebInnerLine());
-        } catch (OperationNotSupportedException e) {
-            // Do nothing. Exception means we can't add more inner lines to our web.
+        public Fly() {
+            int x = random.nextInt() % (width / 2 - flySize);
+            int y = random.nextInt() % (height / 2 - flySize);
+            rect = new Rectangle2D.Float(x, y, flySize, flySize);
         }
 
-    }
-
-    private void generateSkeleton() {
-        skeletonPoints.clear();
-        Random r = new Random();
-
-        for (int i = 0; i < skeletonSides; i++) {
-            PolarPoint p = generateSkeletonPoint(r);
-            while (!skeletonPointIsValid(p, skeletonPoints))
-                p = generateSkeletonPoint(r);
-            skeletonPoints.add(p);
-        }
-
-        Collections.sort(skeletonPoints);
-
-        generateSkeletonPolygon();
-        skeletonPolygon.translate(center.x, center.y);
-
-        if (!skeletonIsValid()) {
-            generateSkeleton();
-        }
-    }
-
-    private PolarPoint generateSkeletonPoint(Random random) {
-        double angle = random.nextDouble() * 2 * Math.PI; // Generate angle in range [0, 2 * PI]
-        int maxDistance = 0;
-        Point bound;
-
-        while (maxDistance <= minSkeletonDistance) {
-            bound = new Point((int) (0.5 * width * Math.cos(angle)), (int) (0.5 * height * Math.sin(angle)));
-            maxDistance = (int) bound.distance(0, 0);
-        }
-
-
-
-        int distance = (int) (minSkeletonDistanceFromCenter + (maxDistance - minSkeletonDistanceFromCenter) * random.nextDouble());
-        return new PolarPoint(angle, distance);
-    }
-
-    private boolean skeletonPointIsValid(PolarPoint p, ArrayList<PolarPoint> list) {
-        for (PolarPoint listPoint : list) {
-            if (Math.abs(p.angle - listPoint.angle) < minAngleBetweenSkeletonLines)
-                return false;
-            int distance = (int) (p.getCartesianPoint().distance(listPoint.getCartesianPoint()));
-            if (p.distance <= minSkeletonDistance)
-                return false;
-        }
-        return true;
-    }
-
-    private boolean skeletonIsValid() {
-        return skeletonContainsCenter();
-    }
-
-    private boolean skeletonContainsCenter() {
-        int shift = Math.min(width, height) / 10;
-        for (int dx = -1; dx <= 1; dx++) {
-            for (int dy = -1; dy <= 1; dy++) {
-                Point p = new Point(center.x + dx * shift, center.y + dy * shift);
-                if (!skeletonPolygon.contains(p)) {
-                    return false;
+        public boolean gotCaught() {
+            for (WebInnerCircle innerCircle : innerCircles) {
+                for (int i = 0; i < innerCircle.list.size(); i++) {
+                    Point a = innerCircle.list.get(i).getCartesianPoint();
+                    Point b = innerCircle.list.get((i + 1) % innerCircle.list.size()).getCartesianPoint();
+                    Line2D line2D = new Line2D.Float(a, b);
+                    if (intersectsWithLine(line2D))
+                        return true;
                 }
             }
+            return false;
         }
-        return true;
-    }
 
-    void draw(Graphics2D g) {
-        drawSkeleton(g);
-        drawInnerLines(g);
-        drawCenterPoint(g);
-    }
+        private boolean intersectsWithLine(Line2D line) {
+            return rect.intersectsLine(line);
+        }
 
-    private void drawCenterPoint(Graphics2D g) {
-        g.fillOval(center.x - 2, center.y - 2, 4, 4);
-    }
 
-    private void drawSkeleton(Graphics2D g) {
-        g.drawPolygon(skeletonPolygon);
-        int[] xPoints = skeletonPolygon.xpoints;
-        int[] yPoints = skeletonPolygon.ypoints;
-        for (int i = 0; i < xPoints.length; i++) {
-            g.fillOval(xPoints[i] - 5, yPoints[i] - 5, 10, 10);
-            g.drawLine(xPoints[i], yPoints[i], center.x, center.y);
+        public void draw(Graphics2D g) {
+
+            g.fillRect((int) rect.getX() + center.x, (int) rect.getY() + center.y, flySize, flySize);
         }
     }
 
-    private void generateSkeletonPolygon() {
-        skeletonPolygon = getPolygonFromPolarPointsList(skeletonPoints);
-    }
+    private class WebSkeleton {
+        private Polygon polygon;
+        private ArrayList<PolarPoint> points;
 
-    private Polygon getPolygonFromPolarPointsList(ArrayList<PolarPoint> list) {
-        int[] xPoints = new int[list.size()];
-        int[] yPoints = new int[list.size()];
-
-        for (int i = 0; i < list.size(); i++) {
-            Point p = list.get(i).getCartesianPoint();
-            xPoints[i] = p.x;
-            yPoints[i] = p.y;
+        public WebSkeleton() {
+            points = new ArrayList<PolarPoint>();
         }
 
-        return new Polygon(xPoints, yPoints, list.size());
-    }
+        private void generate() {
+            points.clear();
 
-    private void drawInnerLines(Graphics2D g) {
-        for(WebInnerLine line : innerLines)
-            g.drawPolygon(line.getPolygon());
-    }
+            for (int i = 0; i < webSidesCount; i++) {
+                PolarPoint p = generateSkeletonPoint();
+                while (!skeletonPointIsValid(p, points))
+                    p = generateSkeletonPoint();
+                points.add(p);
+            }
 
-    private Polygon getPolygonFromPointsArray(ArrayList<Point> list) {
-        int[] xPoints = new int[list.size()];
-        int[] yPoints = new int[list.size()];
+            Collections.sort(points);
 
-        for (int i = 0; i < list.size(); i++) {
-            xPoints[i] = list.get(i).x;
-            yPoints[i] = list.get(i).y;
+            generateSkeletonPolygon();
+            polygon.translate(center.x, center.y);
+
+            if (!skeletonIsValid()) {
+                generate();
+            }
         }
 
-        return new Polygon(xPoints, yPoints, xPoints.length);
+        private PolarPoint generateSkeletonPoint() {
+            double angle = random.nextDouble() * 2 * Math.PI; // Generate angle in range [0, 2 * PI]
+            int maxDistance = 0;
+            Point bound;
+
+            while (maxDistance <= minSkeletonDistance) {
+                bound = new Point((int) (0.5 * width * Math.cos(angle)), (int) (0.5 * height * Math.sin(angle)));
+                maxDistance = (int) bound.distance(0, 0);
+            }
+
+            int distance = (int) (minSkeletonDistanceFromCenter + (maxDistance - minSkeletonDistanceFromCenter) * random.nextDouble());
+            return new PolarPoint(angle, distance);
+        }
+
+        private boolean skeletonPointIsValid(PolarPoint p, ArrayList<PolarPoint> list) {
+            if (p.distance <= minSkeletonDistance)
+                return false;
+
+            for (PolarPoint listPoint : list) {
+                if (Math.abs(p.angle - listPoint.angle) < minAngleBetweenSkeletonLines)
+                    return false;
+            }
+            return true;
+        }
+
+        private boolean skeletonIsValid() {
+            return skeletonContainsCenter();
+        }
+
+        private boolean skeletonContainsCenter() {
+            int shift = Math.min(width, height) / 10;
+            for (int dx = -1; dx <= 1; dx++) {
+                for (int dy = -1; dy <= 1; dy++) {
+                    Point p = new Point(center.x + dx * shift, center.y + dy * shift);
+                    if (!polygon.contains(p)) {
+                        return false;
+                    }
+                }
+            }
+            return true;
+        }
+
+        private void draw(Graphics2D g) {
+            g.drawPolygon(polygon);
+            int[] xPoints = polygon.xpoints;
+            int[] yPoints = polygon.ypoints;
+            for (int i = 0; i < xPoints.length; i++) {
+                g.fillOval(xPoints[i] - 5, yPoints[i] - 5, 10, 10);
+                g.drawLine(xPoints[i], yPoints[i], center.x, center.y);
+            }
+        }
+
+        private void generateSkeletonPolygon() {
+            skeleton.polygon = getPolygonFromPolarPointsList(skeleton.points);
+        }
+    }
+}
+
+
+class PolarPoint implements Comparable<PolarPoint> {
+    double angle;
+    int distance;
+
+    public PolarPoint(double angle, int distance) {
+        this.angle = angle;
+        this.distance = distance;
+    }
+
+    public Point getCartesianPoint() {
+        return new Point((int) (Math.cos(angle) * distance), (int) (Math.sin(angle) * distance));
+    }
+
+    @Override
+    public int compareTo(PolarPoint polarPoint) {
+        return Double.compare(angle, polarPoint.angle);
     }
 }
