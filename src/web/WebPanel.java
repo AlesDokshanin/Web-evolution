@@ -8,9 +8,6 @@ public class WebPanel extends JPanel {
     static final int PANEL_WIDTH = 600;
     static final int PANEL_HEIGHT = 600;
     private static final Color BG_COLOR = Color.white;
-    private static final float STROKE_WIDTH = 6f;
-    private static final Stroke STROKE = new BasicStroke(STROKE_WIDTH,
-            BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND);
     private BufferedImage image = new BufferedImage(PANEL_WIDTH, PANEL_HEIGHT,
             BufferedImage.TYPE_INT_RGB);
     private Color color = Color.black;
@@ -54,5 +51,9 @@ public class WebPanel extends JPanel {
 
     public void resetWeb() {
         web = new Web();
+    }
+
+    public void toggleDrawFlies() {
+        web.drawFlies = !web.drawFlies;
     }
 }

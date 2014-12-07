@@ -11,6 +11,7 @@ public class Runner {
     private WebPanel webPanel = new WebPanel();
     private JButton btnGenerate = new JButton("Generate");
     private JTextField tfEfficiency = new JTextField();
+    private JCheckBox cbDrawFlies = new JCheckBox("Draw flies", false);
 
     public Runner() {
         createAndShowUI();
@@ -44,7 +45,11 @@ public class Runner {
     private void setUpControlsPanel() {
         controlsPanel.setLayout(new BoxLayout(controlsPanel, BoxLayout.X_AXIS));
         controlsPanel.add(btnGenerate);
+        controlsPanel.add(cbDrawFlies);
         controlsPanel.add(tfEfficiency);
+
+
+        tfEfficiency.setEditable(false);
         tfEfficiency.setText("Efficiency: " + Double.toString(webPanel.getWebEfficiency()));
 
         btnGenerate.addActionListener(new ActionListener() {
@@ -52,6 +57,13 @@ public class Runner {
             public void actionPerformed(ActionEvent actionEvent) {
                 webPanel.resetWeb();
                 tfEfficiency.setText("Efficiency: " + Double.toString(webPanel.getWebEfficiency()));
+                frame.repaint();
+            }
+        });
+        cbDrawFlies.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent actionEvent) {
+                webPanel.toggleDrawFlies();
                 frame.repaint();
             }
         });

@@ -12,14 +12,14 @@ public class Web {
     public static int height = 600;
 
     private static Point center = new Point(width / 2, height / 2);
-    private static int minSkeletonDistance = Math.min(height, width) / 5;
-    private static int minSkeletonDistanceFromCenter = 2 * minSkeletonDistance;
-    private static int minInnerCircleDistance = Math.min(height, width) / 50;
-    private static int flySize = Math.min(width, height) / 50;
-    private static int fliesCount = 1000;
-    private static int webSidesCount = 15;
-    private static double minAngleBetweenSkeletonLines = 2 * Math.PI / (3 * webSidesCount);
-    private static double innerCirclesDispersion = 5.0;
+    private static final int minSkeletonDistance = Math.min(height, width) / 5;
+    private static final int minSkeletonDistanceFromCenter = 2 * minSkeletonDistance;
+    private static final int minInnerCircleDistance = Math.min(height, width) / 50;
+    private static final int flySize = Math.min(width, height) / 50;
+    private static final int fliesCount = 1000;
+    private static final int webSidesCount = 15;
+    private static final double minAngleBetweenSkeletonLines = 2 * Math.PI / (3 * webSidesCount);
+    private static final double innerCirclesDispersion = 5.0;
     private static Random random = new Random();
 
     private int generation = 0;
@@ -27,10 +27,14 @@ public class Web {
 
     private WebSkeleton skeleton;
     private ArrayList<WebInnerCircle> innerCircles;
+    private ArrayList<Fly> caughtFlies;
+
+    public static boolean drawFlies = false;
 
     public Web() {
         skeleton = new WebSkeleton();
         innerCircles = new ArrayList<WebInnerCircle>();
+        caughtFlies = new ArrayList<Fly>();
 
         generate();
         calculateEfficiency();
@@ -46,6 +50,7 @@ public class Web {
             Fly fly = new Fly();
             if (fly.gotCaught()) {
                 caught++;
+                caughtFlies.add(fly);
             }
         }
         efficiency = (double) caught / fliesCount;
@@ -70,7 +75,14 @@ public class Web {
     void draw(Graphics2D g) {
         skeleton.draw(g);
         drawInnerCircles(g);
-        drawCenterPoint(g);
+        //drawCenterPoint(g);
+        if(drawFlies)
+            drawCaughtFlies(g);
+    }
+
+    private void drawCaughtFlies(Graphics2D g) {
+        for(Fly f : caughtFlies)
+            f.draw(g);
     }
 
     private void drawCenterPoint(Graphics2D g) {
@@ -91,8 +103,14 @@ public class Web {
     }
 
     private void drawInnerCircles(Graphics2D g) {
+        Color oldColor = g.getColor();
+        Stroke oldStroke = g.getStroke();
+        g.setColor(new Color(255, 0, 0));
+        g.setStroke(new BasicStroke(2));
         for (WebInnerCircle circle : innerCircles)
             g.drawPolygon(circle.getPolygon());
+        g.setColor(oldColor);
+        g.setStroke(oldStroke);
     }
 
     private Polygon getPolygonFromPointsArray(ArrayList<Point> list) {
@@ -191,8 +209,10 @@ public class Web {
 
 
         public void draw(Graphics2D g) {
-
+            g.setColor(new Color(94, 104, 205, 128));
+            g.setBackground(new Color(0, 0, 0));
             g.fillRect((int) rect.getX() + center.x, (int) rect.getY() + center.y, flySize, flySize);
+            g.drawRect((int) rect.getX() + center.x, (int) rect.getY() + center.y, flySize, flySize);
         }
     }
 
@@ -267,13 +287,19 @@ public class Web {
         }
 
         private void draw(Graphics2D g) {
+            Stroke oldStroke = g.getStroke();
+            Color oldColor = g.getColor();
+            g.setStroke(new BasicStroke(2));
+            g.setColor(new Color(128, 128, 128));
             g.drawPolygon(polygon);
             int[] xPoints = polygon.xpoints;
             int[] yPoints = polygon.ypoints;
             for (int i = 0; i < xPoints.length; i++) {
-                g.fillOval(xPoints[i] - 5, yPoints[i] - 5, 10, 10);
+                //g.fillOval(xPoints[i] - 5, yPoints[i] - 5, 10, 10);
                 g.drawLine(xPoints[i], yPoints[i], center.x, center.y);
             }
+            g.setStroke(oldStroke);
+            g.setColor(oldColor);
         }
 
         private void generateSkeletonPolygon() {
