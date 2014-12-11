@@ -8,16 +8,19 @@ import java.util.Collections;
 import java.util.Random;
 
 public class Web {
+    public static final int MIN_SIDES = 3;
+    public static final int MAX_SIDES = 30;
     public static int width = 600;
     public static int height = 600;
+
+    private static int webSidesCount = 15;
 
     private static Point center = new Point(width / 2, height / 2);
     private static final int minSkeletonDistance = Math.min(height, width) / 5;
     private static final int minSkeletonDistanceFromCenter = 2 * minSkeletonDistance;
     private static final int minInnerCircleDistance = Math.min(height, width) / 50;
     private static final int flySize = Math.min(width, height) / 50;
-    private static final int fliesCount = 1000;
-    private static final int webSidesCount = 15;
+    private static final int fliesCount = 5000;
     private static final double minAngleBetweenSkeletonLines = 2 * Math.PI / (3 * webSidesCount);
     private static final double innerCirclesDispersion = 5.0;
     private static Random random = new Random();
@@ -30,6 +33,16 @@ public class Web {
     private ArrayList<Fly> caughtFlies;
 
     public static boolean drawFlies = false;
+
+    public static void setSidesCount(int count) throws IllegalArgumentException {
+        if(count < MIN_SIDES || count > MAX_SIDES) throw new IllegalArgumentException("Web sides count should be in range [" +
+        MIN_SIDES + ", " + MAX_SIDES + "]");
+        webSidesCount = count;
+    }
+
+    public static int getSidesCount() {
+        return webSidesCount;
+    }
 
     public Web() {
         skeleton = new WebSkeleton();
@@ -75,7 +88,6 @@ public class Web {
     void draw(Graphics2D g) {
         skeleton.draw(g);
         drawInnerCircles(g);
-        //drawCenterPoint(g);
         if(drawFlies)
             drawCaughtFlies(g);
     }
@@ -287,8 +299,6 @@ public class Web {
         }
 
         private void draw(Graphics2D g) {
-            Stroke oldStroke = g.getStroke();
-            Color oldColor = g.getColor();
             g.setStroke(new BasicStroke(2));
             g.setColor(new Color(128, 128, 128));
             g.drawPolygon(polygon);
@@ -298,8 +308,6 @@ public class Web {
                 //g.fillOval(xPoints[i] - 5, yPoints[i] - 5, 10, 10);
                 g.drawLine(xPoints[i], yPoints[i], center.x, center.y);
             }
-            g.setStroke(oldStroke);
-            g.setColor(oldColor);
         }
 
         private void generateSkeletonPolygon() {
