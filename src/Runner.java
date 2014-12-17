@@ -14,7 +14,7 @@ public class Runner {
     private WebPanel webPanel = new WebPanel();
     private JButton btnGenerate = new JButton("Generate");
     private JTextField tfEfficiency = new JTextField();
-    private JCheckBox cbDrawFlies = new JCheckBox("Draw flies?", false);
+    private JCheckBox cbDrawFlies = new JCheckBox("Draw flies", false);
     private JSpinner sidesCountSpinner = new JSpinner();
     private JLabel sidesCountLabel = new JLabel("Sides count:");
     private JLabel efficiencyLabel = new JLabel("Efficiency:");

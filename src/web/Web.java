@@ -8,8 +8,9 @@ import java.util.Collections;
 import java.util.Random;
 
 public class Web {
-    public static final int MIN_SIDES = 3;
-    public static final int MAX_SIDES = 30;
+    private static final int MIN_SIDES = 3;
+    private static final int MAX_SIDES = 30;
+
     public static int width = 600;
     public static int height = 600;
 
@@ -35,8 +36,9 @@ public class Web {
     public static boolean drawFlies = false;
 
     public static void setSidesCount(int count) throws IllegalArgumentException {
-        if(count < MIN_SIDES || count > MAX_SIDES) throw new IllegalArgumentException("Web sides count should be in range [" +
-        MIN_SIDES + ", " + MAX_SIDES + "]");
+        if(count < MIN_SIDES || count > MAX_SIDES)
+            throw new IllegalArgumentException("Web sides count should be in range ["
+                    + MIN_SIDES + ", " + MAX_SIDES + "]");
         webSidesCount = count;
     }
 
@@ -182,7 +184,8 @@ public class Web {
                     return;
                 }
 
-                int upperBound = Math.min(maxDistance, lowerBound + (int) (innerCirclesDispersion * minInnerCircleDistance));
+                int upperBound = Math.min(maxDistance, lowerBound +
+                        (int) (innerCirclesDispersion * minInnerCircleDistance));
                 double angle = skeleton.points.get(i).angle;
 
                 int distance = (int) (lowerBound + random.nextDouble() * (upperBound - lowerBound));
@@ -266,7 +269,8 @@ public class Web {
                 maxDistance = (int) bound.distance(0, 0);
             }
 
-            int distance = (int) (minSkeletonDistanceFromCenter + (maxDistance - minSkeletonDistanceFromCenter) * random.nextDouble());
+            int distance = (int) (minSkeletonDistanceFromCenter +
+                    (maxDistance - minSkeletonDistanceFromCenter) * random.nextDouble());
             return new PolarPoint(angle, distance);
         }
 
