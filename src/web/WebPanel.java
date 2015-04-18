@@ -17,7 +17,26 @@ public class WebPanel extends JPanel {
     public WebPanel() {
         Web.height = PANEL_HEIGHT;
         Web.width = PANEL_WIDTH;
+
+  /*      Web bestWeb = new Web(), currWeb = null;
+        boolean initNew = true;
+        for (int i = 1; i < 1000; i++) {
+            if(initNew) {
+                currWeb = new Web();
+                initNew = false;
+            }
+            else currWeb.build();
+            if(bestWeb.getEfficiency() < currWeb.getEfficiency()) {
+                bestWeb = currWeb;
+                initNew = true;
+            }
+            System.out.print("\rIteration: " + (i+1) + ". Best result: " + bestWeb.getEfficiency());
+        }
+        web = bestWeb;*/
+
         web = new Web();
+
+
         Graphics g = image.getGraphics();
         g.setColor(BG_COLOR);
         g.fillRect(0, 0, PANEL_WIDTH, PANEL_HEIGHT);
@@ -54,6 +73,6 @@ public class WebPanel extends JPanel {
     }
 
     public void toggleDrawFlies() {
-        web.drawFlies = !web.drawFlies;
+        Web.drawFlies = !Web.drawFlies;
     }
 }

@@ -17,26 +17,27 @@ public class Web {
     private static int webSidesCount = 15;
 
     private static Point center = new Point(width / 2, height / 2);
-    private static final int minSkeletonDistance = Math.min(height, width) / 5;
-    private static final int minSkeletonDistanceFromCenter = 2 * minSkeletonDistance;
-    private static final int minInnerCircleDistance = Math.min(height, width) / 50;
+    private static final int minDistanceBetweenSkeletonPoints = Math.min(height, width) / 5;
+    private static final int minSkeletonDistanceFromCenter = 2 * minDistanceBetweenSkeletonPoints;
+    private static final int minTrappingNetCircleDistance = Math.min(height, width) / 75;
     private static final int flySize = Math.min(width, height) / 50;
-    private static final int fliesCount = 5000;
+    private static final int fliesCount = 1000;
     private static final double minAngleBetweenSkeletonLines = 2 * Math.PI / (3 * webSidesCount);
-    private static final double innerCirclesDispersion = 5.0;
+    private static final double trappingNetCirclesDispersion = 7.0;
     private static Random random = new Random();
 
     private int generation = 0;
     private double efficiency = 0;
 
     private WebSkeleton skeleton;
-    private ArrayList<WebInnerCircle> innerCircles;
+    private ArrayList<TrappingNetCircle> trappingNet;
+    private ArrayList<Fly> flies;
     private ArrayList<Fly> caughtFlies;
 
     public static boolean drawFlies = false;
 
     public static void setSidesCount(int count) throws IllegalArgumentException {
-        if(count < MIN_SIDES || count > MAX_SIDES)
+        if (count < MIN_SIDES || count > MAX_SIDES)
             throw new IllegalArgumentException("Web sides count should be in range ["
                     + MIN_SIDES + ", " + MAX_SIDES + "]");
         webSidesCount = count;
@@ -47,22 +48,30 @@ public class Web {
     }
 
     public Web() {
-        skeleton = new WebSkeleton();
-        innerCircles = new ArrayList<WebInnerCircle>();
-        caughtFlies = new ArrayList<Fly>();
-
-        generate();
-        calculateEfficiency();
+        flies = new ArrayList<Fly>(fliesCount);
+        for (int i = 0; i < fliesCount; i++) {
+            flies.add(new Fly());
+        }
+        build();
     }
 
     public double getEfficiency() {
         return efficiency;
     }
 
+    void build(){
+        skeleton = new WebSkeleton();
+        trappingNet = new ArrayList<TrappingNetCircle>();
+        skeleton.generate();
+        generateTrappingNet();
+
+        calculateEfficiency();
+    }
+
     private void calculateEfficiency() {
+        caughtFlies = new ArrayList<Fly>();
         int caught = 0;
-        for (int i = 0; i < fliesCount; i++) {
-            Fly fly = new Fly();
+        for (Fly fly: flies) {
             if (fly.gotCaught()) {
                 caught++;
                 caughtFlies.add(fly);
@@ -71,31 +80,27 @@ public class Web {
         efficiency = (double) caught / fliesCount;
     }
 
-    private void generate() {
-        skeleton.generate();
-        generateInnerCircles();
-    }
 
-    private void generateInnerCircles() {
-        innerCircles.clear();
+    private void generateTrappingNet() {
+        trappingNet.clear();
 
-        while(true) {
-            WebInnerCircle circle = new WebInnerCircle();
-            if(circle.fitsToWeb())
-                innerCircles.add(circle);
+        while (true) {
+            TrappingNetCircle circle = new TrappingNetCircle();
+            if (circle.fitsToWeb())
+                trappingNet.add(circle);
             else break;
         }
     }
 
     void draw(Graphics2D g) {
         skeleton.draw(g);
-        drawInnerCircles(g);
-        if(drawFlies)
+        drawTrappingNet(g);
+        if (drawFlies)
             drawCaughtFlies(g);
     }
 
     private void drawCaughtFlies(Graphics2D g) {
-        for(Fly f : caughtFlies)
+        for (Fly f : caughtFlies)
             f.draw(g);
     }
 
@@ -116,12 +121,12 @@ public class Web {
         return new Polygon(xPoints, yPoints, list.size());
     }
 
-    private void drawInnerCircles(Graphics2D g) {
+    private void drawTrappingNet(Graphics2D g) {
         Color oldColor = g.getColor();
         Stroke oldStroke = g.getStroke();
         g.setColor(new Color(255, 0, 0));
         g.setStroke(new BasicStroke(2));
-        for (WebInnerCircle circle : innerCircles)
+        for (TrappingNetCircle circle : trappingNet)
             g.drawPolygon(circle.getPolygon());
         g.setColor(oldColor);
         g.setStroke(oldStroke);
@@ -139,7 +144,7 @@ public class Web {
         return new Polygon(xPoints, yPoints, xPoints.length);
     }
 
-    private class WebInnerCircle {
+    private class TrappingNetCircle {
         private ArrayList<PolarPoint> list;
         private Polygon polygon;
 
@@ -149,9 +154,9 @@ public class Web {
 
         private boolean fits = false;
 
-        public WebInnerCircle() {
+        public TrappingNetCircle() {
             list = new ArrayList<PolarPoint>();
-            generateInnerCircle();
+            generateTrappingNetCircle();
         }
 
         public Polygon getPolygon() {
@@ -171,13 +176,13 @@ public class Web {
             polygon.translate(center.x, center.y);
         }
 
-        private void generateInnerCircle() {
+        private void generateTrappingNetCircle() {
             for (int i = 0; i < webSidesCount; i++) {
-                int lowerBound = minInnerCircleDistance;
-                if (!innerCircles.isEmpty()) {
-                    lowerBound += innerCircles.get(innerCircles.size() - 1).list.get(i).distance;
+                int lowerBound = minTrappingNetCircleDistance;
+                if (!trappingNet.isEmpty()) {
+                    lowerBound += trappingNet.get(trappingNet.size() - 1).list.get(i).distance;
                 }
-                int maxDistance = skeleton.points.get(i).distance - minInnerCircleDistance;
+                int maxDistance = skeleton.points.get(i).distance - minTrappingNetCircleDistance;
 
                 if (lowerBound > maxDistance) {
                     fits = false;
@@ -185,7 +190,7 @@ public class Web {
                 }
 
                 int upperBound = Math.min(maxDistance, lowerBound +
-                        (int) (innerCirclesDispersion * minInnerCircleDistance));
+                        (int) (trappingNetCirclesDispersion * minTrappingNetCircleDistance));
                 double angle = skeleton.points.get(i).angle;
 
                 int distance = (int) (lowerBound + random.nextDouble() * (upperBound - lowerBound));
@@ -206,7 +211,7 @@ public class Web {
         }
 
         public boolean gotCaught() {
-            for (WebInnerCircle innerCircle : innerCircles) {
+            for (TrappingNetCircle innerCircle : trappingNet) {
                 for (int i = 0; i < innerCircle.list.size(); i++) {
                     Point a = innerCircle.list.get(i).getCartesianPoint();
                     Point b = innerCircle.list.get((i + 1) % innerCircle.list.size()).getCartesianPoint();
@@ -240,6 +245,18 @@ public class Web {
         }
 
         private void generate() {
+            do {
+                generateSkeletonPoints();
+
+                Collections.sort(points);
+
+                generateSkeletonPolygon();
+                polygon.translate(center.x, center.y);
+            }
+            while(!skeletonIsValid());
+        }
+
+        private void generateSkeletonPoints() {
             points.clear();
 
             for (int i = 0; i < webSidesCount; i++) {
@@ -248,23 +265,15 @@ public class Web {
                     p = generateSkeletonPoint();
                 points.add(p);
             }
-
-            Collections.sort(points);
-
-            generateSkeletonPolygon();
-            polygon.translate(center.x, center.y);
-
-            if (!skeletonIsValid()) {
-                generate();
-            }
         }
 
         private PolarPoint generateSkeletonPoint() {
-            double angle = random.nextDouble() * 2 * Math.PI; // Generate angle in range [0, 2 * PI]
+            double angle = random.nextDouble() * 2 * Math.PI;
             int maxDistance = 0;
             Point bound;
 
-            while (maxDistance <= minSkeletonDistance) {
+            while (maxDistance <= minSkeletonDistanceFromCenter) {
+                // Calculating the maximum distance from center to panel corner in direction of given angle
                 bound = new Point((int) (0.5 * width * Math.cos(angle)), (int) (0.5 * height * Math.sin(angle)));
                 maxDistance = (int) bound.distance(0, 0);
             }
@@ -274,11 +283,13 @@ public class Web {
             return new PolarPoint(angle, distance);
         }
 
-        private boolean skeletonPointIsValid(PolarPoint p, ArrayList<PolarPoint> list) {
-            if (p.distance <= minSkeletonDistance)
+        private boolean skeletonPointIsValid(PolarPoint p, ArrayList<PolarPoint> otherPoints) {
+            // Validating the distance from center
+            if (p.distance <= minDistanceBetweenSkeletonPoints)
                 return false;
 
-            for (PolarPoint listPoint : list) {
+            // Validating the angle between other points' vectors
+            for (PolarPoint listPoint : otherPoints) {
                 if (Math.abs(p.angle - listPoint.angle) < minAngleBetweenSkeletonLines)
                     return false;
             }
@@ -286,10 +297,10 @@ public class Web {
         }
 
         private boolean skeletonIsValid() {
-            return skeletonContainsCenter();
+            return centerFitsGoodIntoPolygon();
         }
 
-        private boolean skeletonContainsCenter() {
+        private boolean centerFitsGoodIntoPolygon() {
             int shift = Math.min(width, height) / 10;
             for (int dx = -1; dx <= 1; dx++) {
                 for (int dy = -1; dy <= 1; dy++) {
