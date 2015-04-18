@@ -10,17 +10,17 @@ import java.awt.event.ActionListener;
 
 public class Runner {
     private JFrame frame;
-    private JPanel controlsPanel = new JPanel();
-    private WebPanel webPanel = new WebPanel();
-    private JButton btnGenerate = new JButton("Generate");
-    private JTextField tfEfficiency = new JTextField();
-    private JCheckBox cbDrawFlies = new JCheckBox("Draw flies", false);
-    private JSpinner sidesCountSpinner = new JSpinner();
-    private JLabel sidesCountLabel = new JLabel("Sides count:");
-    private JLabel efficiencyLabel = new JLabel("Efficiency:");
+    private final JPanel controlsPanel = new JPanel();
+    private final WebPanel webPanel = new WebPanel();
+    private final JButton btnGenerate = new JButton("Generate");
+    private final JTextField tfEfficiency = new JTextField();
+    private final JCheckBox cbDrawFlies = new JCheckBox("Draw flies", false);
+    private final JSpinner sidesCountSpinner = new JSpinner();
+    private final JLabel sidesCountLabel = new JLabel("Sides count:");
+    private final JLabel efficiencyLabel = new JLabel("Efficiency:");
 
 
-    public Runner() {
+    private Runner() {
         createAndShowUI();
     }
 
