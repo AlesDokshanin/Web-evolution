@@ -161,7 +161,7 @@ public class Web {
     }
 
     protected void mutate() {
-        MUTATION_TYPE mutationType = MUTATION_TYPE.values()[random.nextInt() % MUTATION_TYPE.values().length];
+        WebMutationType mutationType = WebMutationType.values()[random.nextInt() % WebMutationType.values().length];
         WebMutation mutation;
 
         switch (mutationType) {
@@ -386,7 +386,7 @@ class PolarPoint implements Comparable<PolarPoint> {
     }
 }
 
-enum MUTATION_TYPE {
+enum WebMutationType {
     SKELETON_ANGLE
 }
 
