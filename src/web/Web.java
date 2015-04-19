@@ -8,23 +8,22 @@ import java.util.Collections;
 import java.util.Random;
 
 public class Web {
-    protected static final int MIN_SIDES = 5;
-    protected static final int MAX_SIDES = 30;
+    private static final int MIN_SIDES = 10;
+    private static final int MAX_SIDES = 20;
 
     protected static int width = 600;
     protected static int height = 600;
 
-    protected static int webSidesCount = 15;
+    static int webSidesCount = 15;
 
-    protected static Point center = new Point(width / 2, height / 2);
-    protected static final int minDistanceBetweenSkeletonPoints = Math.min(height, width) / 5;
-    protected static final int minSkeletonDistanceFromCenter = (int) (1.5 * minDistanceBetweenSkeletonPoints);
+    private static final Point center = new Point(width / 2, height / 2);
+    protected static final int minSkeletonDistanceFromCenter = (int) (Math.min(height, width) / 3.5);
     protected static final int minTrappingNetCircleDistance = Math.min(height, width) / 75;
     protected static final int flySize = Math.min(width, height) / 50;
     protected static final int fliesCount = 1000;
-    protected static final double minAngleBetweenSkeletonLines = 2 * Math.PI / (3 * webSidesCount);
+    protected static final double minAngleBetweenSkeletonLines = 2 * Math.PI / (2 * webSidesCount);
     protected static final double trappingNetCirclesDispersion = 7.0;
-    protected static Random random = new Random();
+    protected static final Random random = new Random();
 
     protected int generation = 0;
     private double efficiency = 0;
@@ -161,16 +160,20 @@ public class Web {
     }
 
     protected void mutate() {
-        WebMutationType mutationType = WebMutationType.values()[random.nextInt() % WebMutationType.values().length];
+        WebMutationType mutationType = WebMutationType.values()[random.nextInt(WebMutationType.values().length)];
+//        WebMutationType mutationType = WebMutationType.SKELETON_ANGLE;
+
         WebMutation mutation;
 
         switch (mutationType) {
             case SKELETON_ANGLE:
                 mutation = new SkeletonAngleMutation(this);
                 break;
-            default:
-                mutation = null;
+            case SKELETON_DISTANCE:
+                mutation = new SkeletonDistanceMutation(this);
                 break;
+            default:
+                throw new RuntimeException("Unexpected mutation type");
         }
 
         System.out.println("Applying " + mutation.title);
@@ -178,7 +181,7 @@ public class Web {
     }
 
     protected class TrappingNetCircle {
-        protected ArrayList<PolarPoint> points;
+        protected final ArrayList<PolarPoint> points;
         protected Polygon polygon;
 
         public boolean fitsToWeb() {
@@ -235,7 +238,7 @@ public class Web {
     }
 
     protected class Fly {
-        protected Rectangle2D rect;
+        protected final Rectangle2D rect;
 
         public Fly() {
             int x = random.nextInt() % (width / 2 - flySize);
@@ -271,7 +274,7 @@ public class Web {
 
     protected class WebSkeleton {
         protected Polygon polygon;
-        protected ArrayList<PolarPoint> points;
+        protected final ArrayList<PolarPoint> points;
 
         public WebSkeleton() {
             points = new ArrayList<PolarPoint>();
@@ -316,10 +319,6 @@ public class Web {
         }
 
         protected boolean skeletonPointIsValid(PolarPoint p, ArrayList<PolarPoint> otherPoints) {
-            // Validating the distance from center
-            if (p.distance <= minDistanceBetweenSkeletonPoints)
-                return false;
-
             // Validating the angle between other points' vectors
             for (PolarPoint listPoint : otherPoints) {
                 if (Math.abs(p.angle - listPoint.angle) < minAngleBetweenSkeletonLines)
@@ -387,12 +386,12 @@ class PolarPoint implements Comparable<PolarPoint> {
 }
 
 enum WebMutationType {
-    SKELETON_ANGLE
+    SKELETON_ANGLE, SKELETON_DISTANCE
 }
 
 abstract class WebMutation {
 
-    protected Web web;
+    protected final Web web;
     protected String title = "WebMutation";
 
     WebMutation(Web web) {
@@ -406,6 +405,7 @@ abstract class WebMutation {
 }
 
 class SkeletonAngleMutation extends WebMutation {
+
     SkeletonAngleMutation(Web web) {
         super(web);
         this.title = "SkeletonAngleMutation";
@@ -413,36 +413,59 @@ class SkeletonAngleMutation extends WebMutation {
 
     @Override
     protected void mutate() {
-        int maxIndex = 0;
-        double maxAngle = 0;
-        for (int i = 0; i < web.skeleton.points.size(); i++) {
-            double prev = i == 0 ? web.skeleton.points.get(web.skeleton.points.size() - 1).angle : web.skeleton.points.get(i - 1).angle;
-            double curr = web.skeleton.points.get(i).angle;
+        do {
+            int index = getRandomVectorIndex();
 
-            if (prev > curr) {
-                curr += 2*Math.PI;
-            }
+            double lowerBound, upperBound;
+            lowerBound = (index == 0) ? web.skeleton.points.get(web.skeleton.points.size() - 1).angle : web.skeleton.points.get(index - 1).angle;
+            upperBound = (index == web.skeleton.points.size() - 1) ? web.skeleton.points.get(0).angle : web.skeleton.points.get(index + 1).angle;
 
-            double delta = curr - prev;
-            if(delta > maxAngle) {
-                maxAngle = delta;
-                maxIndex = i;
-            }
-        }
+            lowerBound += Web.minAngleBetweenSkeletonLines;
+            upperBound -= Web.minAngleBetweenSkeletonLines;
 
-        double lowerBound, upperBound;
-        lowerBound = (maxIndex == 0) ? web.skeleton.points.get(web.skeleton.points.size() - 1).angle : web.skeleton.points.get(maxIndex - 1).angle;
-        upperBound = lowerBound + maxAngle;
+            if(lowerBound > upperBound)
+                upperBound += 2*Math.PI;
 
-        lowerBound += Web.minAngleBetweenSkeletonLines;
-        upperBound -= Web.minAngleBetweenSkeletonLines;
-
-        web.skeleton.points.get(maxIndex).angle = (lowerBound + Web.random.nextDouble() * ((upperBound-lowerBound)) % (2*Math.PI));
+            web.skeleton.points.get(index).angle = ((lowerBound + Web.random.nextDouble() * ((upperBound-lowerBound))) % (2*Math.PI));
+        } while (!web.skeleton.isValid());
 
         web.skeleton.generateSkeletonPolygon();
         web.updateTrappingNet();
 
+        super.mutate();
+    }
+
+    private int getRandomVectorIndex() {
+        return Web.random.nextInt(Web.webSidesCount);
+    }
+}
+
+class SkeletonDistanceMutation extends WebMutation {
+
+    SkeletonDistanceMutation(Web web) {
+        super(web);
+        this.title = "SkeletonDistanceMutation";
+    }
+
+    @Override
+    protected void mutate() {
+        do {
+            int index = getVectorIndex();
+
+            double angle = web.skeleton.points.get(index).angle;
+            Point bound = new Point((int) (0.5 * Web.width * Math.cos(angle)), (int) (0.5 * Web.height * Math.sin(angle)));
+            double maxDistance = (int) bound.distance(0, 0);
+
+            int lowerBound = web.trappingNet.get(web.trappingNet.size() - 1).points.get(index).distance + Web.minTrappingNetCircleDistance;
+            web.skeleton.points.get(index).distance = (int) (lowerBound + Web.random.nextDouble() * (maxDistance - lowerBound));
+        } while (!web.skeleton.isValid());
+
+        web.skeleton.generateSkeletonPolygon();
 
         super.mutate();
+    }
+
+    private int  getVectorIndex() {
+        return Web.random.nextInt(Web.webSidesCount);
     }
 }
