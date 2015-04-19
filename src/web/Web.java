@@ -18,7 +18,7 @@ public class Web {
 
     private static final Point center = new Point(width / 2, height / 2);
     protected static final int minSkeletonDistanceFromCenter = (int) (Math.min(height, width) / 3.5);
-    protected static final int minTrappingNetCircleDistance = Math.min(height, width) / 75;
+    protected static final int minTrappingNetCircleDistance = Math.min(height, width) / 50;
     protected static final int flySize = Math.min(width, height) / 50;
     protected static final int fliesCount = 1000;
     protected static final double minAngleBetweenSkeletonLines = 2 * Math.PI / (2 * webSidesCount);
@@ -161,7 +161,7 @@ public class Web {
 
     protected void mutate() {
         WebMutationType mutationType = WebMutationType.values()[random.nextInt(WebMutationType.values().length)];
-//        WebMutationType mutationType = WebMutationType.SKELETON_ANGLE;
+//        WebMutationType mutationType = WebMutationType.TRAPPING_NET;
 
         WebMutation mutation;
 
@@ -172,15 +172,19 @@ public class Web {
             case SKELETON_DISTANCE:
                 mutation = new SkeletonDistanceMutation(this);
                 break;
+            case TRAPPING_NET:
+                mutation = new TrappingNetMutation(this);
+                break;
+
             default:
-                throw new RuntimeException("Unexpected mutation type");
+                throw new RuntimeException("Unexpected mutation type: " + String.valueOf(mutationType));
         }
 
         System.out.println("Applying " + mutation.title);
         mutation.mutate();
     }
 
-    protected class TrappingNetCircle {
+    public class TrappingNetCircle {
         protected final ArrayList<PolarPoint> points;
         protected Polygon polygon;
 
@@ -200,15 +204,8 @@ public class Web {
         }
 
         protected void generatePolygon() {
-            int n = points.size();
-            int[] xPoints = new int[n];
-            int[] yPoints = new int[n];
-            for (int i = 0; i < n; i++) {
-                Point p = points.get(i).getCartesianPoint();
-                xPoints[i] = p.x;
-                yPoints[i] = p.y;
-            }
-            polygon = new Polygon(xPoints, yPoints, n);
+
+            polygon = getPolygonFromPolarPointsList(points);
             polygon.translate(center.x, center.y);
         }
 
@@ -272,7 +269,7 @@ public class Web {
         }
     }
 
-    protected class WebSkeleton {
+    public class WebSkeleton {
         protected Polygon polygon;
         protected final ArrayList<PolarPoint> points;
 
@@ -351,9 +348,8 @@ public class Web {
             int[] xPoints = polygon.xpoints;
             int[] yPoints = polygon.ypoints;
             for (int i = 0; i < xPoints.length; i++) {
-                //g.fillOval(xPoints[i] - 5, yPoints[i] - 5, 10, 10);
+//                g.drawString(String.valueOf(i), xPoints[i], yPoints[i]);
                 g.drawLine(xPoints[i], yPoints[i], center.x, center.y);
-                g.drawString(String.valueOf(i), xPoints[i], yPoints[i]);
             }
         }
 
@@ -386,7 +382,7 @@ class PolarPoint implements Comparable<PolarPoint> {
 }
 
 enum WebMutationType {
-    SKELETON_ANGLE, SKELETON_DISTANCE
+    SKELETON_ANGLE, SKELETON_DISTANCE, TRAPPING_NET
 }
 
 abstract class WebMutation {
@@ -399,8 +395,16 @@ abstract class WebMutation {
     }
 
     protected void mutate() {
+        tryToAddTrappingNetCircle();
+
         web.generation++;
         web.calculateEfficiency();
+    }
+
+    private void tryToAddTrappingNetCircle() {
+        Web.TrappingNetCircle netCircle = web.new TrappingNetCircle();
+        if(netCircle.fitsToWeb())
+            web.trappingNet.add(netCircle);
     }
 }
 
@@ -414,7 +418,7 @@ class SkeletonAngleMutation extends WebMutation {
     @Override
     protected void mutate() {
         do {
-            int index = getRandomVectorIndex();
+            int index = getVectorIndex();
 
             double lowerBound, upperBound;
             lowerBound = (index == 0) ? web.skeleton.points.get(web.skeleton.points.size() - 1).angle : web.skeleton.points.get(index - 1).angle;
@@ -435,7 +439,7 @@ class SkeletonAngleMutation extends WebMutation {
         super.mutate();
     }
 
-    private int getRandomVectorIndex() {
+    private int getVectorIndex() {
         return Web.random.nextInt(Web.webSidesCount);
     }
 }
@@ -467,5 +471,39 @@ class SkeletonDistanceMutation extends WebMutation {
 
     private int  getVectorIndex() {
         return Web.random.nextInt(Web.webSidesCount);
+    }
+}
+
+class TrappingNetMutation extends WebMutation {
+    TrappingNetMutation(Web web) {
+        super(web);
+        this.title = "TrappingNetMutation";
+    }
+
+    @Override
+    protected void mutate() {
+        // The index of trapping net circle
+        int index = Web.random.nextInt(web.trappingNet.size());
+
+        for (int i = 0; i < Web.webSidesCount; i++) {
+            // 'i' is the index of vector
+            int lowerBound, upperBound;
+
+            if (index == 0)
+                lowerBound = Web.minTrappingNetCircleDistance;
+            else
+                lowerBound = web.trappingNet.get(index - 1).points.get(i).distance + Web.minTrappingNetCircleDistance;
+
+            if(index == web.trappingNet.size() - 1)
+                upperBound = web.skeleton.points.get(i).distance - Web.minTrappingNetCircleDistance;
+            else
+                upperBound = web.trappingNet.get(index + 1).points.get(i).distance - Web.minTrappingNetCircleDistance;
+
+            web.trappingNet.get(index).points.get(i).distance = lowerBound + (int) (Web.random.nextDouble() * (upperBound - lowerBound));
+        }
+
+        web.trappingNet.get(index).generatePolygon();
+
+        super.mutate();
     }
 }
