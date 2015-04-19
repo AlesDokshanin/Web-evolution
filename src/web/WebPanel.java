@@ -75,4 +75,8 @@ public class WebPanel extends JPanel {
     public void toggleDrawFlies() {
         Web.drawFlies = !Web.drawFlies;
     }
+
+    public void mutateWeb() {
+        web.mutate();
+    }
 }

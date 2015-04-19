@@ -18,6 +18,7 @@ public class Runner {
     private final JSpinner sidesCountSpinner = new JSpinner();
     private final JLabel sidesCountLabel = new JLabel("Sides count:");
     private final JLabel efficiencyLabel = new JLabel("Efficiency:");
+    private final JButton btnMutate = new JButton("Mutate");
 
 
     private Runner() {
@@ -44,7 +45,6 @@ public class Runner {
         setUpControlsPanel();
         addListeners();
         addComponentsToPane(frame.getContentPane());
-
         frame.pack();
         frame.setVisible(true);
     }
@@ -52,6 +52,7 @@ public class Runner {
     private void setUpControlsPanel() {
         controlsPanel.setLayout(new BoxLayout(controlsPanel, BoxLayout.X_AXIS));
         controlsPanel.add(btnGenerate);
+        controlsPanel.add(btnMutate);
         controlsPanel.add(Box.createRigidArea(new Dimension(5, 0)));
         controlsPanel.add(sidesCountLabel);
         controlsPanel.add(sidesCountSpinner);
@@ -103,6 +104,14 @@ public class Runner {
                 } catch (IllegalArgumentException e) {
                     sidesCountSpinner.setValue(Web.getSidesCount());
                 }
+            }
+        });
+        btnMutate.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent actionEvent) {
+                webPanel.mutateWeb();
+                tfEfficiency.setText(Double.toString(webPanel.getWebEfficiency()));
+                frame.repaint();
             }
         });
     }
