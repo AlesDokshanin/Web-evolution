@@ -14,11 +14,13 @@ public class Runner {
     private final WebPanel webPanel = new WebPanel();
     private final JButton btnGenerate = new JButton("Generate");
     private final JTextField tfEfficiency = new JTextField();
+    private final JTextField tfGeneration = new JTextField();
     private final JCheckBox cbDrawFlies = new JCheckBox("Draw flies", false);
     private final JSpinner sidesCountSpinner = new JSpinner();
     private final JLabel sidesCountLabel = new JLabel("Sides count:");
     private final JLabel efficiencyLabel = new JLabel("Efficiency:");
-    private final JButton btnMutate = new JButton("Mutate");
+    private final JLabel generationLabel = new JLabel("Generation:");
+    private final JButton btnReproduce = new JButton("Reproduce");
 
 
     private Runner() {
@@ -52,7 +54,7 @@ public class Runner {
     private void setUpControlsPanel() {
         controlsPanel.setLayout(new BoxLayout(controlsPanel, BoxLayout.X_AXIS));
         controlsPanel.add(btnGenerate);
-        controlsPanel.add(btnMutate);
+        controlsPanel.add(btnReproduce);
         controlsPanel.add(Box.createRigidArea(new Dimension(5, 0)));
         controlsPanel.add(sidesCountLabel);
         controlsPanel.add(sidesCountSpinner);
@@ -60,10 +62,16 @@ public class Runner {
         controlsPanel.add(efficiencyLabel);
         controlsPanel.add(tfEfficiency);
         controlsPanel.add(Box.createRigidArea(new Dimension(5, 0)));
+        controlsPanel.add(generationLabel);
+        controlsPanel.add(tfGeneration);
+        controlsPanel.add(Box.createRigidArea(new Dimension(5, 0)));
         controlsPanel.add(cbDrawFlies);
 
         tfEfficiency.setEditable(false);
+        tfGeneration.setEditable(false);
         tfEfficiency.setText(Double.toString(webPanel.getWebEfficiency()));
+        tfGeneration.setText(String.valueOf(webPanel.getGeneration()));
+
         sidesCountSpinner.setValue(Web.getSidesCount());
         sidesCountSpinner.setToolTipText("Sides count:");
     }
@@ -106,11 +114,12 @@ public class Runner {
                 }
             }
         });
-        btnMutate.addActionListener(new ActionListener() {
+        btnReproduce.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
-                webPanel.mutateWeb();
+                webPanel.reproduceWeb();
                 tfEfficiency.setText(Double.toString(webPanel.getWebEfficiency()));
+                tfGeneration.setText(String.valueOf(webPanel.getGeneration()));
                 frame.repaint();
             }
         });

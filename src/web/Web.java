@@ -7,9 +7,11 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Random;
 
-public class Web {
+public class Web implements Comparable<Web> {
     private static final int MIN_SIDES = 10;
     private static final int MAX_SIDES = 20;
+
+    private static final int CHILDREN_COUNT = 3;
 
     protected static int width = 600;
     protected static int height = 600;
@@ -17,21 +19,30 @@ public class Web {
     static int webSidesCount = 15;
 
     private static final Point center = new Point(width / 2, height / 2);
-    protected static final int minSkeletonDistanceFromCenter = (int) (Math.min(height, width) / 3.5);
-    protected static final int minTrappingNetCircleDistance = Math.min(height, width) / 50;
-    protected static final int flySize = Math.min(width, height) / 50;
-    protected static final int fliesCount = 1000;
-    protected static final double minAngleBetweenSkeletonLines = 2 * Math.PI / (2 * webSidesCount);
-    protected static final double trappingNetCirclesDispersion = 7.0;
-    protected static final Random random = new Random();
+    private static final int minSkeletonDistanceFromCenter = (int) (Math.min(height, width) / 3.5);
+    static final int minTrappingNetCircleDistance = Math.min(height, width) / 50;
+    private static final int flySize = Math.min(width, height) / 50;
+    private static final int fliesCount = 1000;
+    static final double minAngleBetweenSkeletonLines = 2 * Math.PI / (2 * webSidesCount);
+    private static final double trappingNetCirclesDispersion = 7.0;
+    static final Random random = new Random();
 
-    protected int generation = 0;
-    private double efficiency = 0;
+    int generation = 1;
+    double efficiency = 0;
 
-    protected WebSkeleton skeleton;
-    protected ArrayList<TrappingNetCircle> trappingNet;
-    protected ArrayList<Fly> flies;
-    protected ArrayList<Fly> caughtFlies;
+    public int getGeneration() {
+        return generation;
+    }
+
+    @Override
+    public int compareTo(Web web) {
+        return Double.compare(this.efficiency, web.efficiency);
+    }
+
+    WebSkeleton skeleton;
+    ArrayList<TrappingNetCircle> trappingNet;
+    private  ArrayList<Fly> flies;
+    private ArrayList<Fly> caughtFlies;
 
     public static boolean drawFlies = false;
 
@@ -51,7 +62,35 @@ public class Web {
         build();
     }
 
-    protected void generateFlies() {
+    public Web(Web w) {
+        // Primitives
+        this.generation = w.generation;
+        this.efficiency = w.efficiency;
+
+        // Deep copying
+        this.skeleton = new WebSkeleton(w.skeleton);
+
+        this.trappingNet = new ArrayList<TrappingNetCircle>(w.trappingNet.size());
+        for (TrappingNetCircle c : w.trappingNet)
+            this.trappingNet.add(new TrappingNetCircle(c));
+
+
+        // We just want the same flies ArrayList we won't modify, so just copy the link
+        this.flies = w.flies;
+        this.flies = new ArrayList<Fly>(fliesCount);
+        for(Fly f : w.flies)
+            this.flies.add(new Fly(f));
+
+        // We just want to copy links to the caught flies to the new ArrayList, no deep copy needed
+//        caughtFlies = new ArrayList<Fly>(w.caughtFlies.size());
+//        for (Fly f : w.caughtFlies)
+//            caughtFlies.add(f);
+
+        caughtFlies = null;
+
+    }
+
+    private void generateFlies() {
         flies = new ArrayList<Fly>(fliesCount);
         for (int i = 0; i < fliesCount; i++) {
             flies.add(new Fly());
@@ -62,7 +101,7 @@ public class Web {
         return efficiency;
     }
 
-    void build(){
+    private void build() {
         skeleton = new WebSkeleton();
         trappingNet = new ArrayList<TrappingNetCircle>();
         skeleton.generate();
@@ -71,10 +110,21 @@ public class Web {
         calculateEfficiency();
     }
 
-    protected void calculateEfficiency() {
+    ArrayList<Web> reproduce() {
+        ArrayList<Web> children = new ArrayList<Web>(CHILDREN_COUNT);
+        for (int i = 0; i < CHILDREN_COUNT; i++) {
+            Web child = new Web(this);
+            child.mutate();
+            children.add(child);
+        }
+
+        return children;
+    }
+
+    void calculateEfficiency() {
         caughtFlies = new ArrayList<Fly>();
         int caught = 0;
-        for (Fly fly: flies) {
+        for (Fly fly : flies) {
             if (fly.gotCaught()) {
                 caught++;
                 caughtFlies.add(fly);
@@ -84,7 +134,7 @@ public class Web {
     }
 
 
-    protected void generateTrappingNet() {
+    private void generateTrappingNet() {
         trappingNet.clear();
 
         while (true) {
@@ -95,7 +145,7 @@ public class Web {
         }
     }
 
-    protected void updateTrappingNet() {
+    void updateTrappingNet() {
         for (int i = 0; i < webSidesCount; i++) {
             double newAngle = skeleton.points.get(i).angle;
             for (TrappingNetCircle circle : trappingNet) {
@@ -103,7 +153,7 @@ public class Web {
             }
         }
 
-        for(TrappingNetCircle c: trappingNet)
+        for (TrappingNetCircle c : trappingNet)
             c.generatePolygon();
     }
 
@@ -114,7 +164,7 @@ public class Web {
             drawCaughtFlies(g);
     }
 
-    protected void drawCaughtFlies(Graphics2D g) {
+    private void drawCaughtFlies(Graphics2D g) {
         for (Fly f : caughtFlies)
             f.draw(g);
     }
@@ -123,7 +173,7 @@ public class Web {
         g.fillOval(center.x - 2, center.y - 2, 4, 4);
     }
 
-    protected Polygon getPolygonFromPolarPointsList(ArrayList<PolarPoint> list) {
+    private Polygon getPolygonFromPolarPointsList(ArrayList<PolarPoint> list) {
         int[] xPoints = new int[list.size()];
         int[] yPoints = new int[list.size()];
 
@@ -136,7 +186,7 @@ public class Web {
         return new Polygon(xPoints, yPoints, list.size());
     }
 
-    protected void drawTrappingNet(Graphics2D g) {
+    private void drawTrappingNet(Graphics2D g) {
         Color oldColor = g.getColor();
         Stroke oldStroke = g.getStroke();
         g.setColor(new Color(255, 0, 0));
@@ -161,8 +211,6 @@ public class Web {
 
     protected void mutate() {
         WebMutationType mutationType = WebMutationType.values()[random.nextInt(WebMutationType.values().length)];
-//        WebMutationType mutationType = WebMutationType.TRAPPING_NET;
-
         WebMutation mutation;
 
         switch (mutationType) {
@@ -180,36 +228,42 @@ public class Web {
                 throw new RuntimeException("Unexpected mutation type: " + String.valueOf(mutationType));
         }
 
-        System.out.println("Applying " + mutation.title);
         mutation.mutate();
     }
 
     public class TrappingNetCircle {
-        protected final ArrayList<PolarPoint> points;
-        protected Polygon polygon;
+        final ArrayList<PolarPoint> points;
+        Polygon polygon;
 
         public boolean fitsToWeb() {
             return fits;
         }
 
-        protected boolean fits = false;
+        boolean fits = false;
 
         public TrappingNetCircle() {
             points = new ArrayList<PolarPoint>();
             generateTrappingNetCircle();
         }
 
+        public TrappingNetCircle(TrappingNetCircle c) {
+            this.points = new ArrayList<PolarPoint>(c.points.size());
+            for (PolarPoint p : c.points)
+                this.points.add(new PolarPoint(p));
+            this.generatePolygon();
+        }
+
         public Polygon getPolygon() {
             return polygon;
         }
 
-        protected void generatePolygon() {
+        void generatePolygon() {
 
             polygon = getPolygonFromPolarPointsList(points);
             polygon.translate(center.x, center.y);
         }
 
-        protected void generateTrappingNetCircle() {
+        void generateTrappingNetCircle() {
             for (int i = 0; i < webSidesCount; i++) {
                 int lowerBound = minTrappingNetCircleDistance;
                 if (!trappingNet.isEmpty()) {
@@ -234,13 +288,17 @@ public class Web {
         }
     }
 
-    protected class Fly {
-        protected final Rectangle2D rect;
+    class Fly {
+        final Rectangle2D rect;
 
         public Fly() {
             int x = random.nextInt() % (width / 2 - flySize);
             int y = random.nextInt() % (height / 2 - flySize);
             rect = new Rectangle2D.Float(x, y, flySize, flySize);
+        }
+
+        public Fly(Fly f) {
+            this.rect = new Rectangle2D.Float((float) f.rect.getX(), (float) f.rect.getY(), flySize, flySize);
         }
 
         public boolean gotCaught() {
@@ -256,7 +314,7 @@ public class Web {
             return false;
         }
 
-        protected boolean intersectsWithLine(Line2D line) {
+        boolean intersectsWithLine(Line2D line) {
             return rect.intersectsLine(line);
         }
 
@@ -270,14 +328,21 @@ public class Web {
     }
 
     public class WebSkeleton {
-        protected Polygon polygon;
-        protected final ArrayList<PolarPoint> points;
+        Polygon polygon;
+        final ArrayList<PolarPoint> points;
 
         public WebSkeleton() {
             points = new ArrayList<PolarPoint>();
         }
 
-        protected void generate() {
+        public WebSkeleton(WebSkeleton s) {
+            this.points = new ArrayList<PolarPoint>(s.points.size());
+            for (PolarPoint p : s.points)
+                this.points.add(new PolarPoint(p));
+            generateSkeletonPolygon();
+        }
+
+        void generate() {
             do {
                 generateSkeletonPoints();
 
@@ -285,10 +350,10 @@ public class Web {
 
                 generateSkeletonPolygon();
             }
-            while(!isValid());
+            while (isNotValid());
         }
 
-        protected void generateSkeletonPoints() {
+        void generateSkeletonPoints() {
             points.clear();
 
             for (int i = 0; i < webSidesCount; i++) {
@@ -299,7 +364,7 @@ public class Web {
             }
         }
 
-        protected PolarPoint generateSkeletonPoint() {
+        PolarPoint generateSkeletonPoint() {
             double angle = random.nextDouble() * 2 * Math.PI;
             int maxDistance = 0;
             Point bound;
@@ -315,7 +380,7 @@ public class Web {
             return new PolarPoint(angle, distance);
         }
 
-        protected boolean skeletonPointIsValid(PolarPoint p, ArrayList<PolarPoint> otherPoints) {
+        boolean skeletonPointIsValid(PolarPoint p, ArrayList<PolarPoint> otherPoints) {
             // Validating the angle between other points' vectors
             for (PolarPoint listPoint : otherPoints) {
                 if (Math.abs(p.angle - listPoint.angle) < minAngleBetweenSkeletonLines)
@@ -324,11 +389,11 @@ public class Web {
             return true;
         }
 
-        protected boolean isValid() {
-            return centerFitsGoodIntoPolygon();
+        boolean isNotValid() {
+            return !centerFitsGoodIntoPolygon();
         }
 
-        protected boolean centerFitsGoodIntoPolygon() {
+        boolean centerFitsGoodIntoPolygon() {
             int shift = Math.min(width, height) / 10;
             for (int dx = -1; dx <= 1; dx++) {
                 for (int dy = -1; dy <= 1; dy++) {
@@ -341,7 +406,7 @@ public class Web {
             return true;
         }
 
-        protected void draw(Graphics2D g) {
+        void draw(Graphics2D g) {
             g.setStroke(new BasicStroke(2));
             g.setColor(new Color(128, 128, 128));
             g.drawPolygon(polygon);
@@ -353,8 +418,8 @@ public class Web {
             }
         }
 
-        protected void generateSkeletonPolygon() {
-            skeleton.polygon = getPolygonFromPolarPointsList(skeleton.points);
+        void generateSkeletonPolygon() {
+            polygon = getPolygonFromPolarPointsList(points);
             polygon.translate(center.x, center.y);
 
         }
@@ -369,6 +434,16 @@ class PolarPoint implements Comparable<PolarPoint> {
     public PolarPoint(double angle, int distance) {
         this.angle = angle;
         this.distance = distance;
+    }
+
+    public PolarPoint(Point p) {
+        this.distance = (int) Math.sqrt((p.x * p.x + p.y * p.y));
+        this.angle = Math.atan(p.y / p.x);
+    }
+
+    public PolarPoint(PolarPoint p) {
+        this.angle = p.angle;
+        this.distance = p.distance;
     }
 
     public Point getCartesianPoint() {
@@ -387,14 +462,13 @@ enum WebMutationType {
 
 abstract class WebMutation {
 
-    protected final Web web;
-    protected String title = "WebMutation";
+    final Web web;
 
     WebMutation(Web web) {
         this.web = web;
     }
 
-    protected void mutate() {
+    void mutate() {
         tryToAddTrappingNetCircle();
 
         web.generation++;
@@ -403,7 +477,7 @@ abstract class WebMutation {
 
     private void tryToAddTrappingNetCircle() {
         Web.TrappingNetCircle netCircle = web.new TrappingNetCircle();
-        if(netCircle.fitsToWeb())
+        if (netCircle.fitsToWeb())
             web.trappingNet.add(netCircle);
     }
 }
@@ -412,7 +486,6 @@ class SkeletonAngleMutation extends WebMutation {
 
     SkeletonAngleMutation(Web web) {
         super(web);
-        this.title = "SkeletonAngleMutation";
     }
 
     @Override
@@ -427,11 +500,11 @@ class SkeletonAngleMutation extends WebMutation {
             lowerBound += Web.minAngleBetweenSkeletonLines;
             upperBound -= Web.minAngleBetweenSkeletonLines;
 
-            if(lowerBound > upperBound)
-                upperBound += 2*Math.PI;
+            if (lowerBound > upperBound)
+                upperBound += 2 * Math.PI;
 
-            web.skeleton.points.get(index).angle = ((lowerBound + Web.random.nextDouble() * ((upperBound-lowerBound))) % (2*Math.PI));
-        } while (!web.skeleton.isValid());
+            web.skeleton.points.get(index).angle = ((lowerBound + Web.random.nextDouble() * ((upperBound - lowerBound))) % (2 * Math.PI));
+        } while (web.skeleton.isNotValid());
 
         web.skeleton.generateSkeletonPolygon();
         web.updateTrappingNet();
@@ -448,7 +521,6 @@ class SkeletonDistanceMutation extends WebMutation {
 
     SkeletonDistanceMutation(Web web) {
         super(web);
-        this.title = "SkeletonDistanceMutation";
     }
 
     @Override
@@ -462,14 +534,14 @@ class SkeletonDistanceMutation extends WebMutation {
 
             int lowerBound = web.trappingNet.get(web.trappingNet.size() - 1).points.get(index).distance + Web.minTrappingNetCircleDistance;
             web.skeleton.points.get(index).distance = (int) (lowerBound + Web.random.nextDouble() * (maxDistance - lowerBound));
-        } while (!web.skeleton.isValid());
+        } while (web.skeleton.isNotValid());
 
         web.skeleton.generateSkeletonPolygon();
 
         super.mutate();
     }
 
-    private int  getVectorIndex() {
+    private int getVectorIndex() {
         return Web.random.nextInt(Web.webSidesCount);
     }
 }
@@ -477,7 +549,6 @@ class SkeletonDistanceMutation extends WebMutation {
 class TrappingNetMutation extends WebMutation {
     TrappingNetMutation(Web web) {
         super(web);
-        this.title = "TrappingNetMutation";
     }
 
     @Override
@@ -494,7 +565,7 @@ class TrappingNetMutation extends WebMutation {
             else
                 lowerBound = web.trappingNet.get(index - 1).points.get(i).distance + Web.minTrappingNetCircleDistance;
 
-            if(index == web.trappingNet.size() - 1)
+            if (index == web.trappingNet.size() - 1)
                 upperBound = web.skeleton.points.get(i).distance - Web.minTrappingNetCircleDistance;
             else
                 upperBound = web.trappingNet.get(index + 1).points.get(i).distance - Web.minTrappingNetCircleDistance;

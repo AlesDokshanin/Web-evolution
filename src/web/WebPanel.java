@@ -3,6 +3,8 @@ package web;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.util.ArrayList;
+import java.util.Collections;
 
 public class WebPanel extends JPanel {
     static final int PANEL_WIDTH = 600;
@@ -12,30 +14,11 @@ public class WebPanel extends JPanel {
             BufferedImage.TYPE_INT_RGB);
     private Color color = Color.black;
 
-    private Web web;
+    private Web web = new Web();
 
     public WebPanel() {
         Web.height = PANEL_HEIGHT;
         Web.width = PANEL_WIDTH;
-
-  /*      Web bestWeb = new Web(), currWeb = null;
-        boolean initNew = true;
-        for (int i = 1; i < 1000; i++) {
-            if(initNew) {
-                currWeb = new Web();
-                initNew = false;
-            }
-            else currWeb.build();
-            if(bestWeb.getEfficiency() < currWeb.getEfficiency()) {
-                bestWeb = currWeb;
-                initNew = true;
-            }
-            System.out.print("\rIteration: " + (i+1) + ". Best result: " + bestWeb.getEfficiency());
-        }
-        web = bestWeb;*/
-
-        web = new Web();
-
 
         Graphics g = image.getGraphics();
         g.setColor(BG_COLOR);
@@ -68,6 +51,8 @@ public class WebPanel extends JPanel {
         return web.getEfficiency();
     }
 
+    public double getGeneration() { return web.getGeneration(); }
+
     public void resetWeb() {
         web = new Web();
     }
@@ -76,7 +61,9 @@ public class WebPanel extends JPanel {
         Web.drawFlies = !Web.drawFlies;
     }
 
-    public void mutateWeb() {
-        web.mutate();
+    public void reproduceWeb() {
+        ArrayList<Web> children = web.reproduce();
+        Collections.sort(children, Collections.reverseOrder());
+        web = children.get(0);
     }
 }
