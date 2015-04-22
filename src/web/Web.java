@@ -22,7 +22,11 @@ public class Web implements Comparable<Web> {
     private static final int minSkeletonDistanceFromCenter = (int) (Math.min(height, width) / 3.5);
     static final int minTrappingNetCircleDistance = Math.min(height, width) / 50;
     private static final int flySize = Math.min(width, height) / 50;
-    private static final int fliesCount = 1000;
+    
+    public static int MIN_FLIES_COUNT = 100;
+    public static int MAX_FLIES_COUNT = 1000;
+    static int fliesCount = 100;
+    
     static final double minAngleBetweenSkeletonLines = 2 * Math.PI / (2 * webSidesCount);
     private static final double trappingNetCirclesDispersion = 7.0;
     static final Random random = new Random();
@@ -57,6 +61,18 @@ public class Web implements Comparable<Web> {
         return webSidesCount;
     }
 
+    public static void setFliesCount(int count) throws IllegalArgumentException {
+        if(count < MIN_FLIES_COUNT || count > MAX_FLIES_COUNT ){
+           throw new IllegalArgumentException("Flies count should be in range ["
+                   + MIN_FLIES_COUNT + ", " + MAX_FLIES_COUNT + "]");
+        }
+        fliesCount = count;
+    }
+
+    public static int getFliesCount() {
+        return fliesCount;
+    }
+
     public Web() {
         generateFlies();
         build();
@@ -81,6 +97,7 @@ public class Web implements Comparable<Web> {
         for(Fly f : w.flies)
             this.flies.add(new Fly(f));
 
+        // TODO: optimize flies copying if possible
         // We just want to copy links to the caught flies to the new ArrayList, no deep copy needed
 //        caughtFlies = new ArrayList<Fly>(w.caughtFlies.size());
 //        for (Fly f : w.caughtFlies)
@@ -112,11 +129,13 @@ public class Web implements Comparable<Web> {
 
     ArrayList<Web> reproduce() {
         ArrayList<Web> children = new ArrayList<Web>(CHILDREN_COUNT);
-        for (int i = 0; i < CHILDREN_COUNT; i++) {
+        for (int i = 0; i < CHILDREN_COUNT - 1; i++) {
             Web child = new Web(this);
             child.mutate();
             children.add(child);
         }
+        generation++;
+        children.add(this);
 
         return children;
     }
@@ -302,6 +321,7 @@ public class Web implements Comparable<Web> {
         }
 
         public boolean gotCaught() {
+            // TODO: dont check flies that are obvious not gonna intersect with current line
             for (TrappingNetCircle innerCircle : trappingNet) {
                 for (int i = 0; i < innerCircle.points.size(); i++) {
                     Point a = innerCircle.points.get(i).getCartesianPoint();
