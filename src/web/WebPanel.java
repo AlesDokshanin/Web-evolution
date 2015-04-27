@@ -66,4 +66,8 @@ public class WebPanel extends JPanel {
         Collections.sort(children, Collections.reverseOrder());
         web = children.get(0);
     }
+
+    public int getTrappingNetLength() {
+        return web.getTrappingNetLength();
+    }
 }

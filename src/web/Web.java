@@ -16,6 +16,8 @@ public class Web implements Comparable<Web> {
     protected static int width = 600;
     protected static int height = 600;
 
+    int trappingNetLength;
+
     static int webSidesCount = 15;
 
     private static final Point center = new Point(width / 2, height / 2);
@@ -76,6 +78,14 @@ public class Web implements Comparable<Web> {
     public Web() {
         generateFlies();
         build();
+        calculateTrappingNetLength();
+    }
+
+    private void calculateTrappingNetLength() {
+        trappingNetLength = 0;
+
+        for(TrappingNetCircle circle : trappingNet)
+            trappingNetLength += circle.length;
     }
 
     public Web(Web w) {
@@ -90,20 +100,11 @@ public class Web implements Comparable<Web> {
         for (TrappingNetCircle c : w.trappingNet)
             this.trappingNet.add(new TrappingNetCircle(c));
 
-
-        // We just want the same flies ArrayList we won't modify, so just copy the link
-        this.flies = w.flies;
-        this.flies = new ArrayList<Fly>(fliesCount);
-        for(Fly f : w.flies)
-            this.flies.add(new Fly(f));
-
-        // TODO: optimize flies copying if possible
-        // We just want to copy links to the caught flies to the new ArrayList, no deep copy needed
-//        caughtFlies = new ArrayList<Fly>(w.caughtFlies.size());
-//        for (Fly f : w.caughtFlies)
-//            caughtFlies.add(f);
+        generateFlies();
 
         caughtFlies = null;
+
+        trappingNetLength = w.trappingNetLength;
 
     }
 
@@ -118,11 +119,16 @@ public class Web implements Comparable<Web> {
         return efficiency;
     }
 
+    int getTrappingNetLength() {
+        return trappingNetLength;
+    }
+
     private void build() {
         skeleton = new WebSkeleton();
         trappingNet = new ArrayList<TrappingNetCircle>();
         skeleton.generate();
         generateTrappingNet();
+        calculateTrappingNetLength();
 
         calculateEfficiency();
     }
@@ -135,6 +141,8 @@ public class Web implements Comparable<Web> {
             children.add(child);
         }
         generation++;
+        generateFlies();
+        calculateEfficiency();
         children.add(this);
 
         return children;
@@ -149,9 +157,8 @@ public class Web implements Comparable<Web> {
                 caughtFlies.add(fly);
             }
         }
-        efficiency = (double) caught / fliesCount;
+        efficiency = (double) caught * 10000 / trappingNetLength;
     }
-
 
     private void generateTrappingNet() {
         trappingNet.clear();
@@ -173,7 +180,9 @@ public class Web implements Comparable<Web> {
         }
 
         for (TrappingNetCircle c : trappingNet)
-            c.generatePolygon();
+            c.save();
+
+        calculateTrappingNetLength();
     }
 
     protected void draw(Graphics2D g) {
@@ -253,6 +262,7 @@ public class Web implements Comparable<Web> {
     public class TrappingNetCircle {
         final ArrayList<PolarPoint> points;
         Polygon polygon;
+        int length;
 
         public boolean fitsToWeb() {
             return fits;
@@ -269,17 +279,25 @@ public class Web implements Comparable<Web> {
             this.points = new ArrayList<PolarPoint>(c.points.size());
             for (PolarPoint p : c.points)
                 this.points.add(new PolarPoint(p));
-            this.generatePolygon();
+            this.save();
         }
 
         public Polygon getPolygon() {
             return polygon;
         }
 
-        void generatePolygon() {
+        void calculateLength() {
+            this.length = 0;
 
+            for (int i = 0; i < polygon.xpoints.length; i++) {
+                length += Math.sqrt(polygon.xpoints[i] * polygon.xpoints[i] + polygon.ypoints[i] * polygon.ypoints[i]);
+            }
+        }
+
+        void save() {
             polygon = getPolygonFromPolarPointsList(points);
             polygon.translate(center.x, center.y);
+            calculateLength();
         }
 
         void generateTrappingNetCircle() {
@@ -302,7 +320,7 @@ public class Web implements Comparable<Web> {
                 int distance = (int) (lowerBound + random.nextDouble() * (upperBound - lowerBound));
                 points.add(new PolarPoint(angle, distance));
             }
-            generatePolygon();
+            save();
             fits = true;
         }
     }
@@ -433,7 +451,6 @@ public class Web implements Comparable<Web> {
             int[] xPoints = polygon.xpoints;
             int[] yPoints = polygon.ypoints;
             for (int i = 0; i < xPoints.length; i++) {
-//                g.drawString(String.valueOf(i), xPoints[i], yPoints[i]);
                 g.drawLine(xPoints[i], yPoints[i], center.x, center.y);
             }
         }
@@ -510,8 +527,9 @@ class SkeletonAngleMutation extends WebMutation {
 
     @Override
     protected void mutate() {
+        int index;
         do {
-            int index = getVectorIndex();
+            index = getVectorIndex();
 
             double lowerBound, upperBound;
             lowerBound = (index == 0) ? web.skeleton.points.get(web.skeleton.points.size() - 1).angle : web.skeleton.points.get(index - 1).angle;
@@ -567,6 +585,9 @@ class SkeletonDistanceMutation extends WebMutation {
 }
 
 class TrappingNetMutation extends WebMutation {
+
+    private static final int TRAPPING_NET_DISPERSION = 1;
+
     TrappingNetMutation(Web web) {
         super(web);
     }
@@ -575,9 +596,11 @@ class TrappingNetMutation extends WebMutation {
     protected void mutate() {
         // The index of trapping net circle
         int index = Web.random.nextInt(web.trappingNet.size());
+        int oldCircleLength = web.trappingNet.get(index).length;
 
         for (int i = 0; i < Web.webSidesCount; i++) {
             // 'i' is the index of vector
+            // lowerBound and upperBound are absolute limits for current step
             int lowerBound, upperBound;
 
             if (index == 0)
@@ -590,10 +613,20 @@ class TrappingNetMutation extends WebMutation {
             else
                 upperBound = web.trappingNet.get(index + 1).points.get(i).distance - Web.minTrappingNetCircleDistance;
 
+            // lowerDistance and upperDistance both are the most distant values, that are reachable from current
+            // position with given TRAPPING_NET_DISPERSION
+            int currentDistance = web.trappingNet.get(index).points.get(i).distance;
+            int lowerDistance = currentDistance - TRAPPING_NET_DISPERSION * Web.minTrappingNetCircleDistance;
+            int upperDistance = currentDistance + TRAPPING_NET_DISPERSION * Web.minTrappingNetCircleDistance;
+
+            lowerBound = Math.max(lowerBound, lowerDistance);
+            upperBound = Math.min(upperBound, upperDistance);
+
             web.trappingNet.get(index).points.get(i).distance = lowerBound + (int) (Web.random.nextDouble() * (upperBound - lowerBound));
         }
 
-        web.trappingNet.get(index).generatePolygon();
+        web.trappingNet.get(index).save();
+        web.trappingNetLength = web.trappingNetLength - oldCircleLength + web.trappingNet.get(index).length;
 
         super.mutate();
     }
