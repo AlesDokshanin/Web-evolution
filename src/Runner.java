@@ -110,7 +110,7 @@ public class Runner {
                     JOptionPane.showMessageDialog(frame, e.getMessage());
                 }
                 webPanel.resetWeb();
-                updateWebParams();
+                updateStatusBarText();
                 btnReproduce.setEnabled(true);
                 frame.repaint();
             }
@@ -159,16 +159,18 @@ public class Runner {
             public void actionPerformed(ActionEvent actionEvent) {
                 for (int i = 0; i < (Integer) reproduceStepSpinner.getValue(); i++) {
                     webPanel.reproduceWeb();
-                    updateWebParams();
+                    updateStatusBarText();
                 }
                 frame.repaint();
             }
         });
     }
 
-    private void updateWebParams() {
-        String generation = String.valueOf((int)webPanel.getGeneration());
-        String efficiency = String.valueOf(webPanel.getWebEfficiency()).substring(0, 5);
+    private void updateStatusBarText() {
+        String generation = String.valueOf((int) webPanel.getGeneration());
+        String efficiency = String.valueOf(webPanel.getWebEfficiency());
+        if(efficiency.length() > 5)
+            efficiency = efficiency.substring(0, 5);
         String length = String.valueOf(webPanel.getTrappingNetLength());
         statusLabel.setText("Generation: " + generation + ". Efficiency: " + efficiency + ". Length: " + length + ".");
     }
