@@ -167,8 +167,10 @@ public class Runner {
     }
 
     private void updateWebParams() {
-        String generation = String.valueOf((int)webPanel.getGeneration());
-        String efficiency = String.valueOf(webPanel.getWebEfficiency()).substring(0, 5);
+        String generation = String.valueOf((int) webPanel.getGeneration());
+        String efficiency = String.valueOf(webPanel.getWebEfficiency());
+        if(efficiency.length() > 5)
+            efficiency = efficiency.substring(0, 5);
         String length = String.valueOf(webPanel.getTrappingNetLength());
         statusLabel.setText("Generation: " + generation + ". Efficiency: " + efficiency + ". Length: " + length + ".");
     }
