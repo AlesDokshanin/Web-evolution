@@ -157,11 +157,21 @@ public class Runner {
         btnReproduce.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
-                for (int i = 0; i < (Integer) reproduceStepSpinner.getValue(); i++) {
-                    webPanel.reproduceWeb();
-                    updateStatusBarText();
-                }
-                frame.repaint();
+                new Thread(){
+                    @Override
+                    public void run() {
+                        super.run();
+                        int totalIterations = (Integer) reproduceStepSpinner.getValue();
+                        int updateProgressStep = totalIterations / 100 - 1;
+                        for (int i = 0; i < totalIterations; i++) {
+                            webPanel.reproduceWeb();
+                            if(i % updateProgressStep == 0)
+                                setStatusBarWorkingText(100 * i / totalIterations);
+                        }
+                        updateStatusBarText();
+                        frame.repaint();
+                    }
+                }.start();
             }
         });
     }
@@ -175,10 +185,14 @@ public class Runner {
         statusLabel.setText("Generation: " + generation + ". Efficiency: " + efficiency + ". Length: " + length + ".");
     }
 
+    private void setStatusBarWorkingText(int percentsDone) {
+        String text = "Working: " + String.valueOf(percentsDone) + "%";
+        statusLabel.setText(text);
+    }
+
     private void addComponentsToPane(Container pane) {
         pane.add(controlsPanel, BorderLayout.PAGE_START);
         pane.add(webPanel, BorderLayout.CENTER);
         pane.add(statusPanel, BorderLayout.SOUTH);
     }
-
 }
