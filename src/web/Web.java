@@ -7,85 +7,43 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Random;
 
+enum WebMutationType {
+    SKELETON_ANGLE, SKELETON_DISTANCE, TRAPPING_NET
+}
+
 public class Web implements Comparable<Web> {
+    static final Random random = new Random();
     private static final int MIN_SIDES = 10;
     private static final int MAX_SIDES = 20;
-
     private static final int CHILDREN_COUNT = 3;
-
-    protected static int width = 600;
-    protected static int height = 600;
-
-    int trappingNetLength;
-
-    static int webSidesCount = 15;
-
+    private static final Color FLY_COLOR = new Color(94, 104, 205, 128);
+    private static final int MAX_TRAPPING_NET_LENGTH_UPPER = 200 * 1000;
+    private static final int MAX_TRAPPING_NET_LENGTH_LOWER = 10 * 1000;
+    private static final double trappingNetCirclesDispersion = 7.0;
+    public static int MIN_FLIES_COUNT = 10;
+    public static int MAX_FLIES_COUNT = 1000;
+    public static boolean drawFlies = false;
+    static int width = 600;
+    static int height = 600;
     private static final Point center = new Point(width / 2, height / 2);
     private static final int minSkeletonDistanceFromCenter = (int) (Math.min(height, width) / 3.5);
     static final int minTrappingNetCircleDistance = Math.min(height, width) / 50;
     private static final int flySize = Math.min(width, height) / 50;
-    
-    public static int MIN_FLIES_COUNT = 100;
-    public static int MAX_FLIES_COUNT = 1000;
-    static int fliesCount = 100;
-    
+    static int maxTrappingNetLength = 100 * 1000;
+    static int webSidesCount = 15;
     static final double minAngleBetweenSkeletonLines = 2 * Math.PI / (2 * webSidesCount);
-    private static final double trappingNetCirclesDispersion = 7.0;
-    static final Random random = new Random();
-
+    static int fliesCount = 100;
+    int trappingNetLength;
     int generation = 1;
     double efficiency = 0;
-
-    public int getGeneration() {
-        return generation;
-    }
-
-    @Override
-    public int compareTo(Web web) {
-        return Double.compare(this.efficiency, web.efficiency);
-    }
-
     WebSkeleton skeleton;
     ArrayList<TrappingNetCircle> trappingNet;
     private  ArrayList<Fly> flies;
     private ArrayList<Fly> caughtFlies;
-
-    public static boolean drawFlies = false;
-
-    public static void setSidesCount(int count) throws IllegalArgumentException {
-        if (count < MIN_SIDES || count > MAX_SIDES)
-            throw new IllegalArgumentException("Web sides count should be in range ["
-                    + MIN_SIDES + ", " + MAX_SIDES + "]");
-        webSidesCount = count;
-    }
-
-    public static int getSidesCount() {
-        return webSidesCount;
-    }
-
-    public static void setFliesCount(int count) throws IllegalArgumentException {
-        if(count < MIN_FLIES_COUNT || count > MAX_FLIES_COUNT ){
-           throw new IllegalArgumentException("Flies count should be in range ["
-                   + MIN_FLIES_COUNT + ", " + MAX_FLIES_COUNT + "]");
-        }
-        fliesCount = count;
-    }
-
-    public static int getFliesCount() {
-        return fliesCount;
-    }
-
     public Web() {
         generateFlies();
         build();
         calculateTrappingNetLength();
-    }
-
-    private void calculateTrappingNetLength() {
-        trappingNetLength = 0;
-
-        for(TrappingNetCircle circle : trappingNet)
-            trappingNetLength += circle.length;
     }
 
     public Web(Web w) {
@@ -106,6 +64,57 @@ public class Web implements Comparable<Web> {
 
         trappingNetLength = w.trappingNetLength;
 
+    }
+
+    public static int getSidesCount() {
+        return webSidesCount;
+    }
+
+    public static void setSidesCount(int count) throws IllegalArgumentException {
+        if (count < MIN_SIDES || count > MAX_SIDES)
+            throw new IllegalArgumentException("Web sides count should be in range ["
+                    + MIN_SIDES + ", " + MAX_SIDES + "]");
+        webSidesCount = count;
+    }
+
+    public static int getMaxTrappingNetLength() {
+        return maxTrappingNetLength;
+    }
+
+    public static void setMaxTrappingNetLength(int length) {
+        if(length < MAX_TRAPPING_NET_LENGTH_LOWER || length > MAX_TRAPPING_NET_LENGTH_UPPER) {
+            throw new IllegalArgumentException("Max trapping length should be in range ["
+                    + MAX_TRAPPING_NET_LENGTH_LOWER + ", " + MAX_TRAPPING_NET_LENGTH_UPPER + "]");
+        }
+        maxTrappingNetLength = length;
+    }
+
+    public static int getFliesCount() {
+        return fliesCount;
+    }
+
+    public static void setFliesCount(int count) throws IllegalArgumentException {
+        if(count < MIN_FLIES_COUNT || count > MAX_FLIES_COUNT ){
+           throw new IllegalArgumentException("Flies count should be in range ["
+                   + MIN_FLIES_COUNT + ", " + MAX_FLIES_COUNT + "]");
+        }
+        fliesCount = count;
+    }
+
+    public int getGeneration() {
+        return generation;
+    }
+
+    @Override
+    public int compareTo(Web web) {
+        return Double.compare(this.efficiency, web.efficiency);
+    }
+
+    private void calculateTrappingNetLength() {
+        trappingNetLength = 0;
+
+        for(TrappingNetCircle circle : trappingNet)
+            trappingNetLength += circle.length;
     }
 
     private void generateFlies() {
@@ -263,11 +272,6 @@ public class Web implements Comparable<Web> {
         final ArrayList<PolarPoint> points;
         Polygon polygon;
         int length;
-
-        public boolean fitsToWeb() {
-            return fits;
-        }
-
         boolean fits = false;
 
         public TrappingNetCircle() {
@@ -280,6 +284,10 @@ public class Web implements Comparable<Web> {
             for (PolarPoint p : c.points)
                 this.points.add(new PolarPoint(p));
             this.save();
+        }
+
+        public boolean fitsToWeb() {
+            return fits;
         }
 
         public Polygon getPolygon() {
@@ -339,7 +347,6 @@ public class Web implements Comparable<Web> {
         }
 
         public boolean gotCaught() {
-            // TODO: dont check flies that are obvious not gonna intersect with current line
             for (TrappingNetCircle innerCircle : trappingNet) {
                 for (int i = 0; i < innerCircle.points.size(); i++) {
                     Point a = innerCircle.points.get(i).getCartesianPoint();
@@ -358,7 +365,7 @@ public class Web implements Comparable<Web> {
 
 
         public void draw(Graphics2D g) {
-            g.setColor(new Color(94, 104, 205, 128));
+            g.setColor(FLY_COLOR);
             g.setBackground(new Color(0, 0, 0));
             g.fillRect((int) rect.getX() + center.x, (int) rect.getY() + center.y, flySize, flySize);
             g.drawRect((int) rect.getX() + center.x, (int) rect.getY() + center.y, flySize, flySize);
@@ -366,8 +373,8 @@ public class Web implements Comparable<Web> {
     }
 
     public class WebSkeleton {
-        Polygon polygon;
         final ArrayList<PolarPoint> points;
+        Polygon polygon;
 
         public WebSkeleton() {
             points = new ArrayList<PolarPoint>();
@@ -432,7 +439,7 @@ public class Web implements Comparable<Web> {
         }
 
         boolean centerFitsGoodIntoPolygon() {
-            int shift = Math.min(width, height) / 10;
+            int shift = minTrappingNetCircleDistance;
             for (int dx = -1; dx <= 1; dx++) {
                 for (int dy = -1; dy <= 1; dy++) {
                     Point p = new Point(center.x + dx * shift, center.y + dy * shift);
@@ -463,7 +470,6 @@ public class Web implements Comparable<Web> {
     }
 }
 
-
 class PolarPoint implements Comparable<PolarPoint> {
     double angle;
     int distance;
@@ -493,10 +499,6 @@ class PolarPoint implements Comparable<PolarPoint> {
     }
 }
 
-enum WebMutationType {
-    SKELETON_ANGLE, SKELETON_DISTANCE, TRAPPING_NET
-}
-
 abstract class WebMutation {
 
     final Web web;
@@ -513,9 +515,15 @@ abstract class WebMutation {
     }
 
     private void tryToAddTrappingNetCircle() {
+        if(web.trappingNetLength > Web.maxTrappingNetLength)
+            return;
+
         Web.TrappingNetCircle netCircle = web.new TrappingNetCircle();
-        if (netCircle.fitsToWeb())
+        if (netCircle.fitsToWeb()) {
+            netCircle.save();
             web.trappingNet.add(netCircle);
+            web.trappingNetLength += netCircle.length;
+        }
     }
 }
 
@@ -590,6 +598,13 @@ class TrappingNetMutation extends WebMutation {
 
     TrappingNetMutation(Web web) {
         super(web);
+    }
+
+    protected void deleteRandomCircle(){
+        int index = Web.random.nextInt(web.trappingNet.size());
+        int deletedCircleLength = web.trappingNet.get(index).length;
+        web.trappingNet.remove(index);
+        web.trappingNetLength -= deletedCircleLength;
     }
 
     @Override

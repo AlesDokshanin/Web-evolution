@@ -39,14 +39,6 @@ public class WebPanel extends JPanel {
         return new Dimension(PANEL_WIDTH, PANEL_HEIGHT);
     }
 
-    public void drawWeb() {
-        Graphics2D g = image.createGraphics();
-        g.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
-                RenderingHints.VALUE_ANTIALIAS_ON);
-        web.draw(g);
-        g.dispose();
-    }
-
     public double getWebEfficiency() {
         return web.getEfficiency();
     }

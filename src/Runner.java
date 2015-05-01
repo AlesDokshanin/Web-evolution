@@ -6,8 +6,7 @@ import javax.swing.border.BevelBorder;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+import java.awt.event.*;
 
 public class Runner {
     private JFrame frame;
@@ -24,14 +23,16 @@ public class Runner {
     private final JCheckBox cbDrawFlies = new JCheckBox("Draw flies", false);
 
     private final JSpinner fliesCountSpinner = new JSpinner();
-    private final JLabel fliesCountLabel = new JLabel("Flies (x100):");
+    private final JLabel fliesCountLabel = new JLabel("Flies:");
 
     private final JSpinner sidesCountSpinner = new JSpinner();
     private final JLabel sidesCountLabel = new JLabel("Sides:");
 
     private final JButton btnReproduce = new JButton("Reproduce");
-    private final JLabel reproduceStepLabel = new JLabel("Step: ");
     private final JSpinner reproduceStepSpinner = new JSpinner();
+
+    private final JLabel maxLengthLabel = new JLabel("Max length:");
+    private final JSpinner maxLengthSpinner = new JSpinner();
 
     private Runner() {
         createAndShowUI();
@@ -46,14 +47,12 @@ public class Runner {
                     System.err.print(e.toString());
                 }
                 new Runner();
-
             }
         });
     }
 
     private void createAndShowUI() {
         setUpFrame();
-
         setUpControlsPanel();
         addListeners();
         addComponentsToPane(frame.getContentPane());
@@ -65,7 +64,6 @@ public class Runner {
         controlsPanel.setLayout(new BoxLayout(controlsPanel, BoxLayout.X_AXIS));
         controlsPanel.add(btnGenerate);
         controlsPanel.add(btnReproduce);
-        controlsPanel.add(reproduceStepLabel);
         controlsPanel.add(reproduceStepSpinner);
         controlsPanel.add(Box.createRigidArea(new Dimension(5, 0)));
         controlsPanel.add(sidesCountLabel);
@@ -74,18 +72,24 @@ public class Runner {
         controlsPanel.add(fliesCountLabel);
         controlsPanel.add(fliesCountSpinner);
         controlsPanel.add(Box.createRigidArea(new Dimension(5, 0)));
-        controlsPanel.add(Box.createRigidArea(new Dimension(5, 0)));
+        controlsPanel.add(maxLengthLabel);
+        controlsPanel.add(maxLengthSpinner);
         controlsPanel.add(Box.createRigidArea(new Dimension(5, 0)));
         controlsPanel.add(cbDrawFlies);
 
 
         sidesCountSpinner.setValue(Web.getSidesCount());
-        sidesCountSpinner.setToolTipText("Sides count:");
+        sidesCountSpinner.setToolTipText("Web sides count");
 
-        fliesCountSpinner.setValue(Web.getFliesCount() / 100);
-        fliesCountSpinner.setToolTipText("Flies (x100):");
+        fliesCountSpinner.setValue(Web.getFliesCount() / 10);
+        fliesCountSpinner.setToolTipText("Flies (x10)");
 
+        maxLengthSpinner.setToolTipText("Max trapping net length (x1000)");
+        maxLengthSpinner.setValue(Web.getMaxTrappingNetLength() / 1000);
+
+        reproduceStepSpinner.setToolTipText("Number of generations for reproducing");
         reproduceStepSpinner.setValue(1);
+        reproduceStepSpinner.setPreferredSize(new Dimension(50, 0));
     }
 
     private void setUpFrame() {
@@ -139,10 +143,10 @@ public class Runner {
             public void stateChanged(ChangeEvent changeEvent) {
                 Integer value = (Integer) fliesCountSpinner.getValue();
                 try {
-                    Web.setFliesCount(100 * value);
+                    Web.setFliesCount(10 * value);
                     btnReproduce.setEnabled(false);
                 } catch (IllegalArgumentException e) {
-                    fliesCountSpinner.setValue(Web.getFliesCount() / 100);
+                    fliesCountSpinner.setValue(Web.getFliesCount() / 10);
                 }
             }
         });
@@ -157,21 +161,42 @@ public class Runner {
         btnReproduce.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
-                new Thread(){
+                new Thread() {
                     @Override
                     public void run() {
-                        super.run();
                         int totalIterations = (Integer) reproduceStepSpinner.getValue();
                         int updateProgressStep = totalIterations / 100 - 1;
+                        updateProgressStep = updateProgressStep < 1 ? 1 : updateProgressStep;
                         for (int i = 0; i < totalIterations; i++) {
                             webPanel.reproduceWeb();
-                            if(i % updateProgressStep == 0)
+
+                            if (totalIterations >= 50 && i % updateProgressStep == 0)
                                 setStatusBarWorkingText(100 * i / totalIterations);
                         }
                         updateStatusBarText();
                         frame.repaint();
                     }
                 }.start();
+            }
+        });
+        maxLengthSpinner.addChangeListener(new ChangeListener() {
+            @Override
+            public void stateChanged(ChangeEvent changeEvent) {
+                Integer value = (Integer) maxLengthSpinner.getValue();
+                try {
+                    Web.setMaxTrappingNetLength(1000 * value);
+                    btnReproduce.setEnabled(false);
+                } catch (IllegalArgumentException e) {
+                    maxLengthSpinner.setValue(Web.getMaxTrappingNetLength() / 1000);
+                }
+            }
+        });
+        frame.addWindowStateListener(new WindowStateListener() {
+            @Override
+            public void windowStateChanged(WindowEvent windowEvent) {
+                // Repaint if window became unminimized
+                if(windowEvent.getNewState() == 0)
+                    frame.repaint();
             }
         });
     }
