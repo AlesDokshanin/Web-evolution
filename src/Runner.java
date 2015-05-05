@@ -21,6 +21,7 @@ public class Runner {
     private final JButton btnGenerate = new JButton("Generate");
 
     private final JCheckBox cbDrawFlies = new JCheckBox("Draw flies", false);
+    private final JCheckBox cbNormalDistribution = new JCheckBox("Normal distribution", true);
 
     private final JSpinner fliesCountSpinner = new JSpinner();
     private final JLabel fliesCountLabel = new JLabel("Flies:");
@@ -31,7 +32,7 @@ public class Runner {
     private final JButton btnReproduce = new JButton("Reproduce");
     private final JSpinner reproduceStepSpinner = new JSpinner();
 
-    private final JLabel maxLengthLabel = new JLabel("Max length:");
+    private final JLabel maxLengthLabel = new JLabel("Length:");
     private final JSpinner maxLengthSpinner = new JSpinner();
 
     private Runner() {
@@ -75,6 +76,7 @@ public class Runner {
         controlsPanel.add(maxLengthLabel);
         controlsPanel.add(maxLengthSpinner);
         controlsPanel.add(Box.createRigidArea(new Dimension(5, 0)));
+        controlsPanel.add(cbNormalDistribution);
         controlsPanel.add(cbDrawFlies);
 
 
@@ -195,8 +197,15 @@ public class Runner {
             @Override
             public void windowStateChanged(WindowEvent windowEvent) {
                 // Repaint if window became unminimized
-                if(windowEvent.getNewState() == 0)
+                if (windowEvent.getNewState() == 0)
                     frame.repaint();
+            }
+        });
+        cbNormalDistribution.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent actionEvent) {
+                Web.normalFliesDistribution = !Web.normalFliesDistribution;
+                frame.repaint();
             }
         });
     }

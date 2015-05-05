@@ -7,8 +7,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 
 public class WebPanel extends JPanel {
-    static final int PANEL_WIDTH = 600;
-    static final int PANEL_HEIGHT = 600;
+    static final int PANEL_WIDTH = 800;
+    static final int PANEL_HEIGHT = 800;
     private static final Color BG_COLOR = Color.white;
     private BufferedImage image = new BufferedImage(PANEL_WIDTH, PANEL_HEIGHT,
             BufferedImage.TYPE_INT_RGB);

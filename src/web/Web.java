@@ -16,15 +16,18 @@ public class Web implements Comparable<Web> {
     private static final int MIN_SIDES = 10;
     private static final int MAX_SIDES = 20;
     private static final int CHILDREN_COUNT = 3;
-    private static final Color FLY_COLOR = new Color(94, 104, 205, 128);
+    private static final Color CAUGHT_FLY_COLOR = new Color(94, 104, 205, 128);
+    private static final Color UNCAUGHT_FLY_COLOR = new Color(37, 205, 7, 128);
     private static final int MAX_TRAPPING_NET_LENGTH_UPPER = 200 * 1000;
     private static final int MAX_TRAPPING_NET_LENGTH_LOWER = 10 * 1000;
     private static final double trappingNetCirclesDispersion = 7.0;
     public static int MIN_FLIES_COUNT = 10;
     public static int MAX_FLIES_COUNT = 1000;
     public static boolean drawFlies = false;
-    static int width = 600;
-    static int height = 600;
+    public static boolean normalFliesDistribution = true;
+    private static float percentOfNormalDistributedFlies = 0.25f;
+    static int width = 800;
+    static int height = 800;
     private static final Point center = new Point(width / 2, height / 2);
     private static final int minSkeletonDistanceFromCenter = (int) (Math.min(height, width) / 3.5);
     static final int minTrappingNetCircleDistance = Math.min(height, width) / 50;
@@ -39,7 +42,6 @@ public class Web implements Comparable<Web> {
     WebSkeleton skeleton;
     ArrayList<TrappingNetCircle> trappingNet;
     private  ArrayList<Fly> flies;
-    private ArrayList<Fly> caughtFlies;
     public Web() {
         generateFlies();
         build();
@@ -59,8 +61,6 @@ public class Web implements Comparable<Web> {
             this.trappingNet.add(new TrappingNetCircle(c));
 
         generateFlies();
-
-        caughtFlies = null;
 
         trappingNetLength = w.trappingNetLength;
 
@@ -120,8 +120,11 @@ public class Web implements Comparable<Web> {
     private void generateFlies() {
         flies = new ArrayList<Fly>(fliesCount);
         for (int i = 0; i < fliesCount; i++) {
-            flies.add(new Fly());
+            if(normalFliesDistribution || i <= fliesCount * percentOfNormalDistributedFlies)
+                flies.add(new Fly(true));
+            else flies.add(new Fly(false));
         }
+
     }
 
     public double getEfficiency() {
@@ -158,12 +161,10 @@ public class Web implements Comparable<Web> {
     }
 
     void calculateEfficiency() {
-        caughtFlies = new ArrayList<Fly>();
         int caught = 0;
         for (Fly fly : flies) {
-            if (fly.gotCaught()) {
+            if (fly.checkIfCaught()) {
                 caught++;
-                caughtFlies.add(fly);
             }
         }
         efficiency = (double) caught * 10000 / trappingNetLength;
@@ -197,12 +198,13 @@ public class Web implements Comparable<Web> {
     protected void draw(Graphics2D g) {
         skeleton.draw(g);
         drawTrappingNet(g);
-        if (drawFlies)
-            drawCaughtFlies(g);
+        if (drawFlies) {
+            drawFlies(g);
+        }
     }
 
-    private void drawCaughtFlies(Graphics2D g) {
-        for (Fly f : caughtFlies)
+    private void drawFlies(Graphics2D g) {
+        for (Fly f: flies)
             f.draw(g);
     }
 
@@ -335,10 +337,18 @@ public class Web implements Comparable<Web> {
 
     class Fly {
         final Rectangle2D rect;
+        boolean caught;
 
-        public Fly() {
-            int x = random.nextInt() % (width / 2 - flySize);
-            int y = random.nextInt() % (height / 2 - flySize);
+        public Fly(boolean normalDistribution) {
+            int x, y;
+            if (normalDistribution) {
+                x = random.nextInt() % (width / 2 - flySize);
+                y = random.nextInt() % (height / 2 - flySize);
+            }
+            else {
+                x = random.nextInt() % (width / 4 - flySize) + width / 4;
+                y = random.nextInt() % (height / 4 - flySize) + height / 4;
+            }
             rect = new Rectangle2D.Float(x, y, flySize, flySize);
         }
 
@@ -346,16 +356,19 @@ public class Web implements Comparable<Web> {
             this.rect = new Rectangle2D.Float((float) f.rect.getX(), (float) f.rect.getY(), flySize, flySize);
         }
 
-        public boolean gotCaught() {
+        public boolean checkIfCaught() {
             for (TrappingNetCircle innerCircle : trappingNet) {
                 for (int i = 0; i < innerCircle.points.size(); i++) {
                     Point a = innerCircle.points.get(i).getCartesianPoint();
                     Point b = innerCircle.points.get((i + 1) % innerCircle.points.size()).getCartesianPoint();
                     Line2D line2D = new Line2D.Float(a, b);
-                    if (intersectsWithLine(line2D))
+                    if (intersectsWithLine(line2D)) {
+                        caught = true;
                         return true;
+                    }
                 }
             }
+            caught = false;
             return false;
         }
 
@@ -365,7 +378,10 @@ public class Web implements Comparable<Web> {
 
 
         public void draw(Graphics2D g) {
-            g.setColor(FLY_COLOR);
+            if(caught)
+                g.setColor(CAUGHT_FLY_COLOR);
+            else g.setColor(UNCAUGHT_FLY_COLOR);
+
             g.setBackground(new Color(0, 0, 0));
             g.fillRect((int) rect.getX() + center.x, (int) rect.getY() + center.y, flySize, flySize);
             g.drawRect((int) rect.getX() + center.x, (int) rect.getY() + center.y, flySize, flySize);
