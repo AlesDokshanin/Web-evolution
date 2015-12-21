@@ -18,10 +18,9 @@ public class Runner {
 
     private final WebPanel webPanel = new WebPanel();
 
-    private final JButton btnGenerate = new JButton("Generate");
-
     private final JCheckBox cbDrawFlies = new JCheckBox("Draw flies", false);
     private final JCheckBox cbNormalDistribution = new JCheckBox("Normal distribution", true);
+    private final JCheckBox cbDynamicFlies = new JCheckBox("Dynamic flies", false);
 
     private final JSpinner fliesCountSpinner = new JSpinner();
     private final JLabel fliesCountLabel = new JLabel("Flies:");
@@ -63,7 +62,6 @@ public class Runner {
 
     private void setUpControlsPanel() {
         controlsPanel.setLayout(new BoxLayout(controlsPanel, BoxLayout.X_AXIS));
-        controlsPanel.add(btnGenerate);
         controlsPanel.add(btnReproduce);
         controlsPanel.add(reproduceStepSpinner);
         controlsPanel.add(Box.createRigidArea(new Dimension(5, 0)));
@@ -78,6 +76,7 @@ public class Runner {
         controlsPanel.add(Box.createRigidArea(new Dimension(5, 0)));
         controlsPanel.add(cbNormalDistribution);
         controlsPanel.add(cbDrawFlies);
+        controlsPanel.add(cbDynamicFlies);
 
 
         sidesCountSpinner.setValue(Web.getSidesCount());
@@ -107,20 +106,6 @@ public class Runner {
     }
 
     private void addListeners() {
-        btnGenerate.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent actionEvent) {
-                try {
-                    Web.setSidesCount((Integer) sidesCountSpinner.getValue());
-                } catch (IllegalArgumentException e) {
-                    JOptionPane.showMessageDialog(frame, e.getMessage());
-                }
-                webPanel.resetWeb();
-                updateStatusBarText();
-                btnReproduce.setEnabled(true);
-                frame.repaint();
-            }
-        });
         cbDrawFlies.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
@@ -134,10 +119,12 @@ public class Runner {
                 Integer value = (Integer) sidesCountSpinner.getValue();
                 try {
                     Web.setSidesCount(value);
-                    btnReproduce.setEnabled(false);
+
                 } catch (IllegalArgumentException e) {
                     sidesCountSpinner.setValue(Web.getSidesCount());
                 }
+                resetWeb();
+
             }
         });
         fliesCountSpinner.addChangeListener(new ChangeListener() {
@@ -146,7 +133,7 @@ public class Runner {
                 Integer value = (Integer) fliesCountSpinner.getValue();
                 try {
                     Web.setFliesCount(10 * value);
-                    btnReproduce.setEnabled(false);
+                    resetWeb();
                 } catch (IllegalArgumentException e) {
                     fliesCountSpinner.setValue(Web.getFliesCount() / 10);
                 }
@@ -187,7 +174,6 @@ public class Runner {
                 Integer value = (Integer) maxLengthSpinner.getValue();
                 try {
                     Web.setMaxTrappingNetLength(1000 * value);
-                    btnReproduce.setEnabled(false);
                 } catch (IllegalArgumentException e) {
                     maxLengthSpinner.setValue(Web.getMaxTrappingNetLength() / 1000);
                 }
@@ -208,6 +194,19 @@ public class Runner {
                 frame.repaint();
             }
         });
+        cbDynamicFlies.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent actionEvent) {
+                Web.dynamicFlies = cbDynamicFlies.isSelected();
+            }
+        });
+    }
+
+    private void resetWeb() {
+        webPanel.resetWeb();
+        updateStatusBarText();
+        btnReproduce.setEnabled(true);
+        frame.repaint();
     }
 
     private void updateStatusBarText() {

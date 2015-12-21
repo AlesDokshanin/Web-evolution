@@ -20,17 +20,18 @@ public class Web implements Comparable<Web> {
     private static final Color UNCAUGHT_FLY_COLOR = new Color(37, 205, 7, 128);
     private static final int MAX_TRAPPING_NET_LENGTH_UPPER = 200 * 1000;
     private static final int MAX_TRAPPING_NET_LENGTH_LOWER = 10 * 1000;
-    private static final double trappingNetCirclesDispersion = 7.0;
+    private static final double trappingNetCirclesDispersion = 8.0;
     public static int MIN_FLIES_COUNT = 10;
     public static int MAX_FLIES_COUNT = 1000;
     public static boolean drawFlies = false;
+    public static boolean dynamicFlies = false;
     public static boolean normalFliesDistribution = true;
     private static float percentOfNormalDistributedFlies = 0.25f;
     static int width = 800;
     static int height = 800;
     private static final Point center = new Point(width / 2, height / 2);
-    private static final int minSkeletonDistanceFromCenter = (int) (Math.min(height, width) / 3.5);
-    static final int minTrappingNetCircleDistance = Math.min(height, width) / 50;
+    private static final int minSkeletonDistanceFromCenter = (int) (Math.min(height, width) / 5);
+    static final int minTrappingNetCircleDistance = Math.min(height, width) / 75;
     private static final int flySize = Math.min(width, height) / 50;
     static int maxTrappingNetLength = 100 * 1000;
     static int webSidesCount = 15;
@@ -60,7 +61,14 @@ public class Web implements Comparable<Web> {
         for (TrappingNetCircle c : w.trappingNet)
             this.trappingNet.add(new TrappingNetCircle(c));
 
-        generateFlies();
+        if(!dynamicFlies){
+            flies = new ArrayList<Fly>(w.flies.size());
+            for(Fly f: w.flies)
+                flies.add(new Fly(f));
+        }
+        else {
+            generateFlies();
+        }
 
         trappingNetLength = w.trappingNetLength;
 
@@ -107,7 +115,10 @@ public class Web implements Comparable<Web> {
 
     @Override
     public int compareTo(Web web) {
-        return Double.compare(this.efficiency, web.efficiency);
+        int value = Double.compare(this.efficiency, web.efficiency);
+        if(value == 0)
+            value =  -1 * Double.compare(this.trappingNetLength, web.trappingNetLength);
+        return value;
     }
 
     private void calculateTrappingNetLength() {
@@ -153,8 +164,10 @@ public class Web implements Comparable<Web> {
             children.add(child);
         }
         generation++;
-        generateFlies();
-        calculateEfficiency();
+        if(dynamicFlies)
+            generateFlies();
+            calculateEfficiency();
+
         children.add(this);
 
         return children;
@@ -167,7 +180,8 @@ public class Web implements Comparable<Web> {
                 caught++;
             }
         }
-        efficiency = (double) caught * 10000 / trappingNetLength;
+//        efficiency = (double) caught * 10000 / trappingNetLength;
+        efficiency = (double) caught;
     }
 
     private void generateTrappingNet() {
@@ -267,7 +281,7 @@ public class Web implements Comparable<Web> {
                 throw new RuntimeException("Unexpected mutation type: " + String.valueOf(mutationType));
         }
 
-        mutation.mutate();
+        mutation.apply();
     }
 
     public class TrappingNetCircle {
@@ -523,7 +537,7 @@ abstract class WebMutation {
         this.web = web;
     }
 
-    void mutate() {
+    void apply() {
         tryToAddTrappingNetCircle();
 
         web.generation++;
@@ -550,7 +564,7 @@ class SkeletonAngleMutation extends WebMutation {
     }
 
     @Override
-    protected void mutate() {
+    protected void apply() {
         int index;
         do {
             index = getVectorIndex();
@@ -571,7 +585,7 @@ class SkeletonAngleMutation extends WebMutation {
         web.skeleton.generateSkeletonPolygon();
         web.updateTrappingNet();
 
-        super.mutate();
+        super.apply();
     }
 
     private int getVectorIndex() {
@@ -586,7 +600,7 @@ class SkeletonDistanceMutation extends WebMutation {
     }
 
     @Override
-    protected void mutate() {
+    protected void apply() {
         do {
             int index = getVectorIndex();
 
@@ -600,7 +614,7 @@ class SkeletonDistanceMutation extends WebMutation {
 
         web.skeleton.generateSkeletonPolygon();
 
-        super.mutate();
+        super.apply();
     }
 
     private int getVectorIndex() {
@@ -624,10 +638,13 @@ class TrappingNetMutation extends WebMutation {
     }
 
     @Override
-    protected void mutate() {
+    protected void apply() {
         // The index of trapping net circle
         int index = Web.random.nextInt(web.trappingNet.size());
         int oldCircleLength = web.trappingNet.get(index).length;
+        int sdfasdf;
+        if(index == 0)
+            sdfasdf = 5;
 
         for (int i = 0; i < Web.webSidesCount; i++) {
             // 'i' is the index of vector
@@ -657,8 +674,9 @@ class TrappingNetMutation extends WebMutation {
         }
 
         web.trappingNet.get(index).save();
-        web.trappingNetLength = web.trappingNetLength - oldCircleLength + web.trappingNet.get(index).length;
+        int newCircleLength = web.trappingNet.get(index).length;
+        web.trappingNetLength = web.trappingNetLength - oldCircleLength + newCircleLength;
 
-        super.mutate();
+        super.apply();
     }
 }
