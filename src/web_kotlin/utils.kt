@@ -1,6 +1,15 @@
 package web_kotlin
 
 import java.awt.Point
+import java.awt.Polygon
+
+internal fun getPolygonFromPolarPoints(points: List<PolarPoint>): Polygon {
+    val cartesianPoints: Array<Point> = Array(points.size, { i -> points[i].cartesianPoint() })
+    val xPoints = cartesianPoints.map { it.x }.toIntArray()
+    val yPoints = cartesianPoints.map { it.y }.toIntArray()
+
+    return Polygon(xPoints, yPoints, cartesianPoints.size)
+}
 
 internal class PolarPoint(angle: Double, distance: Int) : Comparable<PolarPoint> {
 
@@ -20,7 +29,6 @@ internal class PolarPoint(angle: Double, distance: Int) : Comparable<PolarPoint>
     }
 
 }
-
 
 private fun polarAngleFromCartesian(x: Int, y: Int): Double {
     return Math.atan(y.toDouble() / x)

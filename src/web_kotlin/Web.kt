@@ -1,8 +1,6 @@
 package web_kotlin
 
 import java.awt.*
-import java.awt.geom.Line2D
-import java.awt.geom.Rectangle2D
 import java.util.*
 
 
@@ -66,10 +64,10 @@ class Web : Comparable<Web> {
 
     }
 
-    override fun compareTo(web: Web): Int {
-        var value = java.lang.Double.compare(this.efficiency, web.efficiency)
+    override fun compareTo(other: Web): Int {
+        var value = java.lang.Double.compare(this.efficiency, other.efficiency)
         if (value == 0)
-            value = -1 * java.lang.Double.compare(this.trappingNetLength.toDouble(), web.trappingNetLength.toDouble())
+            value = -1 * java.lang.Double.compare(this.trappingNetLength.toDouble(), other.trappingNetLength.toDouble())
         return value
     }
 
@@ -124,7 +122,6 @@ class Web : Comparable<Web> {
                 caught++
             }
         }
-        //        efficiency = (double) caught * 10000 / trappingNetLength;
         efficiency = caught.toDouble()
     }
 
@@ -182,197 +179,5 @@ class Web : Comparable<Web> {
         val mutationType = WebMutationType.values()[random.nextInt(WebMutationType.values().size)]
         val mutation = WebMutation.Factory.create(mutationType, this)
         mutation.apply()
-    }
-}
-
-private fun getPolygonFromPolarPoints(points: List<PolarPoint>): Polygon {
-    val cartesianPoints: Array<Point> = Array(points.size, { i -> points[i].cartesianPoint() })
-    val xPoints = cartesianPoints.map { it.x }.toIntArray()
-    val yPoints = cartesianPoints.map { it.y }.toIntArray()
-
-    return Polygon(xPoints, yPoints, cartesianPoints.size)
-}
-
-internal class WebSkeleton() {
-    var points: ArrayList<PolarPoint>
-    var polygon: Polygon? = null
-
-    init {
-        points = ArrayList<PolarPoint>()
-    }
-
-    constructor(skeleton: WebSkeleton) : this() {
-        points.clear()
-        skeleton.points.forEach { points.add(PolarPoint(it)) }
-    }
-
-    fun generatePolygon() {
-        polygon = getPolygonFromPolarPoints(points)
-        polygon!!.translate(CENTER.x, CENTER.y)
-    }
-
-    private fun generatePoint(): PolarPoint {
-        val angle = random.nextDouble() * 2 * Math.PI
-        var maxDistance = 0
-        var bound: Point
-
-        while (maxDistance <= MIN_SKELETON_DISTANCE_FROM_CENTER) {
-            bound = Point((0.5 * WIDTH * Math.cos(angle)).toInt(), (0.5 * HEIGHT * Math.sin(angle)).toInt())
-            maxDistance = bound.distance(0.0, 0.0).toInt()
-        }
-
-        val distance = (MIN_SKELETON_DISTANCE_FROM_CENTER +
-                (maxDistance - MIN_SKELETON_DISTANCE_FROM_CENTER) * random.nextDouble()).toInt()
-
-        return PolarPoint(angle, distance)
-    }
-
-    private fun pointIsValid(p: PolarPoint, points: Iterable<PolarPoint>): Boolean {
-        return points.all({ currPoint -> Math.abs(p.angle - currPoint.angle) >= WebConfig.minAngleBetweenSkeletonLines })
-    }
-
-    private fun centerFitsIntoPolygon(): Boolean {
-        val shift = MIN_TRAPPING_NET_CIRCLE_DISTANCE
-        for (dx in -1..1) {
-            for (dy in -1..1) {
-                var p = Point(CENTER.x + dx * shift, CENTER.y + dy * shift)
-                if (!polygon!!.contains(p))
-                    return false
-            }
-        }
-        return true
-    }
-
-    internal fun isInvalid(): Boolean {
-        return !centerFitsIntoPolygon()
-    }
-
-
-    private fun generatePoints() {
-        points.clear()
-
-        for (i in 1..WebConfig.sidesCount) {
-            var p = generatePoint()
-            while (!pointIsValid(p, points))
-                p = generatePoint()
-            points.add(p)
-        }
-    }
-
-    internal fun draw(g: Graphics2D) {
-        g.stroke = BasicStroke(2f)
-        g.color = Color(128, 128, 128)
-        g.drawPolygon(polygon)
-
-        for (i in 0..polygon!!.npoints - 1)
-            g.drawLine(polygon!!.xpoints[i], polygon!!.ypoints[i], CENTER.x, CENTER.y)
-    }
-
-    internal fun generate() {
-        do {
-            generatePoints()
-            Collections.sort(points)
-            generatePolygon()
-        } while (isInvalid())
-    }
-}
-
-internal class TrappingNetCircle(web: Web) {
-    internal val points = ArrayList<PolarPoint>()
-    internal var polygon: Polygon? = null
-    internal var length = 0
-        private set
-    internal var fits = false
-        private set
-
-    init {
-        generateTrappingNetCircle(web.trappingNet, web.skeleton.points)
-    }
-
-    constructor(c: TrappingNetCircle, web: Web) : this(web) {
-        c.points.forEach { points.add(PolarPoint(it)) }
-        save()
-    }
-
-    internal fun calculateLength() {
-        length = 0
-
-        for (i in 0..polygon!!.xpoints.size - 1) {
-            length += Math.sqrt((polygon!!.xpoints[i] * polygon!!.xpoints[i] +
-                    polygon!!.ypoints[i] * polygon!!.ypoints[i]).toDouble()).toInt()
-        }
-    }
-
-    internal fun save() {
-        polygon = getPolygonFromPolarPoints(points)
-        polygon!!.translate(CENTER.x, CENTER.y)
-        calculateLength()
-    }
-
-    internal fun generateTrappingNetCircle(trappingNet: List<TrappingNetCircle>, skeletonPoints: List<PolarPoint>) {
-        for (i in 0..WebConfig.sidesCount - 1) {
-            var lowerBound = MIN_TRAPPING_NET_CIRCLE_DISTANCE
-            if (!trappingNet.isEmpty()) {
-                lowerBound += trappingNet.last().points[i].distance
-            }
-            val maxDistance = skeletonPoints[i].distance - MIN_TRAPPING_NET_CIRCLE_DISTANCE
-            if (lowerBound > maxDistance) {
-                fits = false
-                return
-            }
-            val upperBound = Math.min(maxDistance, lowerBound + (TRAPPING_NET_CIRCLES_DISPERSION * MIN_TRAPPING_NET_CIRCLE_DISTANCE).toInt())
-            val angle = skeletonPoints[i].angle
-            val distance = (lowerBound + random.nextDouble() * (upperBound - lowerBound)).toInt()
-            points.add(PolarPoint(angle, distance))
-        }
-        save()
-        fits = true
-    }
-}
-
-private class Fly(web: Web) {
-    lateinit var body: Rectangle2D
-    var caught = false
-    val web = web
-
-    constructor(normalDistribution: Boolean, web: Web) : this(web) {
-        var x: Int
-        var y: Int
-
-        if (normalDistribution) {
-            x = random.nextInt() % (WIDTH / 2 - FLY_SIZE)
-            y = random.nextInt() % (HEIGHT / 2 - FLY_SIZE)
-        } else {
-            x = random.nextInt() % (WIDTH / 4 - FLY_SIZE) + WIDTH / 4
-            y = random.nextInt() % (HEIGHT / 4 - FLY_SIZE) + HEIGHT / 4
-        }
-        body = Rectangle2D.Float(x.toFloat(), y.toFloat(), FLY_SIZE.toFloat(), FLY_SIZE.toFloat())
-    }
-
-    constructor(f: Fly, web: Web) : this(web) {
-        body = Rectangle2D.Float(f.body.x.toFloat(), f.body.y.toFloat(), FLY_SIZE.toFloat(), FLY_SIZE.toFloat())
-    }
-
-    internal fun checkIfCaught(): Boolean {
-        caught = false
-        loop@ for (circle in web.trappingNet) {
-            for (i in 0..circle.points.lastIndex) {
-                val a = circle.points[i].cartesianPoint()
-                val b = circle.points[(i + 1) % circle.points.size].cartesianPoint()
-                val line = Line2D.Float(a, b)
-                if (body.intersectsLine(line)) {
-                    caught = true
-                    break@loop
-                }
-            }
-        }
-        return caught
-    }
-
-    internal fun draw(g: Graphics2D) {
-        g.color = if (caught) CAUGHT_FLY_COLOR else UNCAUGHT_FLY_COLOR
-        g.background = Color.BLACK
-        g.fillRect((CENTER.x + body.x).toInt(), (CENTER.y + body.y).toInt(), FLY_SIZE, FLY_SIZE)
-        g.drawRect((CENTER.x + body.x).toInt(), (CENTER.y + body.y).toInt(), FLY_SIZE, FLY_SIZE)
     }
 }

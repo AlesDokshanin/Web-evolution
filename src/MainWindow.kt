@@ -186,12 +186,13 @@ class MainWindow constructor() {
 }
 
 fun main(args: Array<String>) {
-//    javax.swing.SwingUtilities.invokeLater {
-//        try {
-//            javax.swing.UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName())
-//        } catch (e: Exception) {
-//            System.err.print(e.toString())
-//        }
-//    }
-    MainWindow()
+    javax.swing.SwingUtilities.invokeLater {
+        try {
+            javax.swing.UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName())
+
+        } catch (e: Exception) {
+            System.err.print(e.toString())
+        }
+        MainWindow()
+    }
 }
