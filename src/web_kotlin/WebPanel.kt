@@ -1,18 +1,16 @@
 package web_kotlin
 
-import java.awt.Color
-import java.awt.Dimension
-import java.awt.Graphics
-import java.awt.Graphics2D
+import java.awt.*
 import java.awt.image.BufferedImage
 import java.util.*
 import javax.swing.JPanel
 
-class WebPanel : JPanel() {
+class WebPanel(web: Web) : JPanel() {
     private val image = BufferedImage(PANEL_WIDTH, PANEL_HEIGHT,
             BufferedImage.TYPE_INT_RGB)
 
-    private var web = Web()
+    var web = web
+        get
 
     init {
         val g = image.graphics
@@ -25,25 +23,11 @@ class WebPanel : JPanel() {
         super.paintComponent(g)
         g.drawImage(image, 0, 0, null)
         val g2 = g as Graphics2D
-        web.draw(g2)
+        draw(g2)
     }
 
     override fun getPreferredSize(): Dimension {
         return Dimension(PANEL_WIDTH, PANEL_HEIGHT)
-    }
-
-    val webEfficiency: Double
-        get() = web.efficiency
-
-    val generation: Double
-        get() = web.generation.toDouble()
-
-    fun resetWeb() {
-        web = Web()
-    }
-
-    fun toggleDrawFlies() {
-        WebConfig.drawFlies = !WebConfig.drawFlies
     }
 
     fun reproduceWeb() {
@@ -52,12 +36,29 @@ class WebPanel : JPanel() {
         web = children[0]
     }
 
-    val trappingNetLength: Int
-        get() = web.trappingNetLength
-
     companion object {
         internal val PANEL_WIDTH = 800
         internal val PANEL_HEIGHT = 800
         private val BG_COLOR = Color.white
+    }
+
+    internal fun draw(g: Graphics2D) {
+        web.skeleton.draw(g)
+        drawTrappingNet(g)
+        if (WebConfig.drawFlies) {
+            drawFlies(g)
+        }
+    }
+
+    private fun drawFlies(g: Graphics2D) {
+        for (f in web.flies!!)
+            f.draw(g)
+    }
+
+    private fun drawTrappingNet(g: Graphics2D) {
+        g.color = Color(255, 0, 0)
+        g.stroke = BasicStroke(2f)
+        for (circle in web.trappingNet)
+            g.drawPolygon(circle.polygon)
     }
 }

@@ -50,7 +50,7 @@ internal abstract class WebMutation protected constructor(web: Web) {
 private class SkeletonAngleMutation(web: Web) : WebMutation(web) {
     override fun apply() {
         do {
-            var i = vectorIndex
+            val i = vectorIndex
 
             var lowerBound = if (i != 0) web.skeleton.points[i - 1].angle else web.skeleton.points.last().angle
             var upperBound = if (i != web.skeleton.points.lastIndex) web.skeleton.points[i + 1].angle else web.skeleton.points.first().angle

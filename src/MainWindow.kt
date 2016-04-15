@@ -1,3 +1,4 @@
+import web_kotlin.Web
 import web_kotlin.WebConfig
 import web_kotlin.WebPanel
 
@@ -7,14 +8,16 @@ import java.awt.Dimension
 import javax.swing.*
 import javax.swing.border.BevelBorder
 
-class MainWindow constructor() {
-    private var frame: JFrame? = null
+class MainWindow constructor(web: Web) {
+    private var web = web
+
+    lateinit private var frame: JFrame
     private val controlsPanel = JPanel()
 
     private val statusPanel = JPanel()
     private val statusLabel = JLabel("Ready")
 
-    private val webPanel = WebPanel()
+    private val webPanel = WebPanel(web)
 
     private val cbDrawFlies = JCheckBox("Draw flies", false)
     private val cbNormalDistribution = JCheckBox("Normal distribution", true)
@@ -40,9 +43,9 @@ class MainWindow constructor() {
         setUpFrame()
         setUpControlsPanel()
         addListeners()
-        addComponentsToPane(frame!!.contentPane)
-        frame!!.pack()
-        frame!!.isVisible = true
+        addComponentsToPane(frame.contentPane)
+        frame.pack()
+        frame.isVisible = true
     }
 
     private fun setUpControlsPanel() {
@@ -80,8 +83,8 @@ class MainWindow constructor() {
 
     private fun setUpFrame() {
         frame = JFrame("Web evolution")
-        frame!!.defaultCloseOperation = JFrame.EXIT_ON_CLOSE
-        frame!!.layout = BorderLayout()
+        frame.defaultCloseOperation = JFrame.EXIT_ON_CLOSE
+        frame.layout = BorderLayout()
 
         statusPanel.border = BevelBorder(BevelBorder.LOWERED)
         statusPanel.preferredSize = Dimension(frame!!.width, 20)
@@ -92,8 +95,8 @@ class MainWindow constructor() {
 
     private fun addListeners() {
         cbDrawFlies.addActionListener {
-            webPanel.toggleDrawFlies()
-            frame!!.repaint()
+            WebConfig.drawFlies = !WebConfig.drawFlies
+            frame.repaint()
         }
         sidesCountSpinner.addChangeListener {
             val value = sidesCountSpinner.value as Int
@@ -133,7 +136,7 @@ class MainWindow constructor() {
                             setStatusBarWorkingText(100 * i / totalIterations)
                     }
                     updateStatusBarText()
-                    frame!!.repaint()
+                    frame.repaint()
                 }
             }.start()
         }
@@ -145,31 +148,31 @@ class MainWindow constructor() {
                 maxLengthSpinner.value = WebConfig.maxTrappingNetLength / 1000
             }
         }
-        frame!!.addWindowStateListener { windowEvent ->
+        frame.addWindowStateListener { windowEvent ->
             // Repaint if window became unminimized
             if (windowEvent.newState == 0)
-                frame!!.repaint()
+                frame.repaint()
         }
         cbNormalDistribution.addActionListener {
             WebConfig.normalFliesDistribution = !WebConfig.normalFliesDistribution
-            frame!!.repaint()
+            frame.repaint()
         }
         cbDynamicFlies.addActionListener { WebConfig.dynamicFlies = cbDynamicFlies.isSelected }
     }
 
     private fun resetWeb() {
-        webPanel.resetWeb()
+        web = Web()
         updateStatusBarText()
         btnReproduce.isEnabled = true
-        frame!!.repaint()
+        frame.repaint()
     }
 
     private fun updateStatusBarText() {
-        val generation = webPanel.generation.toInt().toString()
-        var efficiency = webPanel.webEfficiency.toString()
+        val generation = web.generation.toString()
+        var efficiency = web.efficiency.toString()
         if (efficiency.length > 5)
             efficiency = efficiency.substring(0, 5)
-        val length = webPanel.trappingNetLength.toString()
+        val length = web.trappingNetLength.toString()
         statusLabel.text = "Generation: $generation. Efficiency: $efficiency. Length: $length."
     }
 
@@ -193,6 +196,7 @@ fun main(args: Array<String>) {
         } catch (e: Exception) {
             System.err.print(e.toString())
         }
-        MainWindow()
+        var web = Web()
+        MainWindow(web)
     }
 }

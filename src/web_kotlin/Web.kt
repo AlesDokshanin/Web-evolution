@@ -32,7 +32,7 @@ class Web : Comparable<Web> {
         internal set
     internal var skeleton = WebSkeleton()
     internal var trappingNet = ArrayList<TrappingNetCircle>()
-    private var flies: ArrayList<Fly>? = null
+    internal var flies: ArrayList<Fly>? = null
 
     constructor() {
         generateFlies()
@@ -49,8 +49,7 @@ class Web : Comparable<Web> {
         skeleton = WebSkeleton(w.skeleton)
 
         trappingNet = ArrayList<TrappingNetCircle>(w.trappingNet.size)
-        for (c in w.trappingNet)
-            trappingNet.add(TrappingNetCircle(c, this))
+        w.trappingNet.forEach { circle -> trappingNet.add(TrappingNetCircle(circle, this)) }
 
         if (!WebConfig.dynamicFlies) {
             flies = ArrayList<Fly>(w.flies!!.size)
@@ -145,34 +144,8 @@ class Web : Comparable<Web> {
             }
         }
 
-        for (c in trappingNet)
-            c.save()
-
+        trappingNet.forEach { circle -> circle.save() }
         calculateTrappingNetLength()
-    }
-
-    internal fun draw(g: Graphics2D) {
-        skeleton.draw(g)
-        drawTrappingNet(g)
-        if (WebConfig.drawFlies) {
-            drawFlies(g)
-        }
-    }
-
-    private fun drawFlies(g: Graphics2D) {
-        for (f in flies!!)
-            f.draw(g)
-    }
-
-    private fun drawTrappingNet(g: Graphics2D) {
-        val oldColor = g.color
-        val oldStroke = g.stroke
-        g.color = Color(255, 0, 0)
-        g.stroke = BasicStroke(2f)
-        for (circle in trappingNet)
-            g.drawPolygon(circle.polygon)
-        g.color = oldColor
-        g.stroke = oldStroke
     }
 
     protected fun mutate() {

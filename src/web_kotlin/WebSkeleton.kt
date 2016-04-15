@@ -14,6 +14,7 @@ internal class WebSkeleton() {
     constructor(skeleton: WebSkeleton) : this() {
         points.clear()
         skeleton.points.forEach { points.add(PolarPoint(it)) }
+        generatePolygon()
     }
 
     fun generatePolygon() {

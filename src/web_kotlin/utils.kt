@@ -27,7 +27,6 @@ internal class PolarPoint(angle: Double, distance: Int) : Comparable<PolarPoint>
     fun cartesianPoint(): Point {
         return Point((Math.cos(angle) * distance).toInt(), (Math.sin(angle) * distance).toInt());
     }
-
 }
 
 private fun polarAngleFromCartesian(x: Int, y: Int): Double {
