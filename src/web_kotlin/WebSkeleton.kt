@@ -18,7 +18,7 @@ internal class WebSkeleton() {
     }
 
     fun generatePolygon() {
-        polygon = getPolygonFromPolarPoints(points)
+        polygon = buildPolygonFromPolarPoints(points)
         polygon!!.translate(CENTER.x, CENTER.y)
     }
 

@@ -1,27 +1,9 @@
 package web_kotlin
 
-import java.awt.*
 import java.util.*
 
 
 internal val random: Random = Random()
-internal val WIDTH = 800
-internal val HEIGHT = 800
-internal val CENTER: Point = Point(WIDTH / 2, HEIGHT / 2)
-internal val MIN_SKELETON_DISTANCE_FROM_CENTER = (Math.min(HEIGHT, WIDTH) / 5).toInt()
-internal val MIN_TRAPPING_NET_CIRCLE_DISTANCE = Math.min(WIDTH, HEIGHT) / 75;
-internal val TRAPPING_NET_CIRCLES_DISPERSION = 8.0
-internal val FLY_SIZE = (Math.min(WIDTH, HEIGHT) / 50).toInt()
-internal val MIN_SIDES = 10
-internal val MAX_SIDES = 20
-internal val MIN_FLIES_COUNT = 10
-internal val MAX_FLIES_COUNT = 1000
-internal val PART_OF_NORMAL_DISTRIBUTED_FLIES = 0.25f
-internal val CAUGHT_FLY_COLOR = Color(94, 104, 205, 128)
-internal val UNCAUGHT_FLY_COLOR = Color(37, 205, 7, 128)
-internal val CHILDREN_COUNT = 3
-internal val MAX_TRAPPING_NET_LENGTH_UPPER = 200 * 1000
-internal val MAX_TRAPPING_NET_LENGTH_LOWER = 10 * 1000
 
 
 class Web : Comparable<Web> {
@@ -49,7 +31,7 @@ class Web : Comparable<Web> {
         skeleton = WebSkeleton(w.skeleton)
 
         trappingNet = ArrayList<TrappingNetCircle>(w.trappingNet.size)
-        w.trappingNet.forEach { circle -> trappingNet.add(TrappingNetCircle(circle, this)) }
+        w.trappingNet.forEach { circle -> trappingNet.add(TrappingNetCircle(circle)) }
 
         if (!WebConfig.dynamicFlies) {
             flies = ArrayList<Fly>(w.flies!!.size)
@@ -70,7 +52,7 @@ class Web : Comparable<Web> {
         return value
     }
 
-    private fun calculateTrappingNetLength() {
+    internal fun calculateTrappingNetLength() {
         trappingNetLength = 0
 
         for (circle in trappingNet)
@@ -107,6 +89,7 @@ class Web : Comparable<Web> {
         generation++
         if (WebConfig.dynamicFlies)
             generateFlies()
+
         calculateEfficiency()
 
         children.add(this)
@@ -121,6 +104,8 @@ class Web : Comparable<Web> {
                 caught++
             }
         }
+
+        // FIXME improve efficiency formula
         efficiency = caught.toDouble()
     }
 
@@ -134,18 +119,6 @@ class Web : Comparable<Web> {
             else
                 break
         }
-    }
-
-    internal fun updateTrappingNet() {
-        for (i in 0..WebConfig.sidesCount - 1) {
-            val newAngle = skeleton.points[i].angle
-            for (circle in trappingNet) {
-                circle.points[i].angle = newAngle
-            }
-        }
-
-        trappingNet.forEach { circle -> circle.save() }
-        calculateTrappingNetLength()
     }
 
     protected fun mutate() {

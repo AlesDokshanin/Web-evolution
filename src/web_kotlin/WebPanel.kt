@@ -2,15 +2,14 @@ package web_kotlin
 
 import java.awt.*
 import java.awt.image.BufferedImage
-import java.util.*
 import javax.swing.JPanel
 
 class WebPanel(web: Web) : JPanel() {
     private val image = BufferedImage(PANEL_WIDTH, PANEL_HEIGHT,
             BufferedImage.TYPE_INT_RGB)
 
-    var web = web
-        get
+    internal var web = web
+        set
 
     init {
         val g = image.graphics
@@ -28,12 +27,6 @@ class WebPanel(web: Web) : JPanel() {
 
     override fun getPreferredSize(): Dimension {
         return Dimension(PANEL_WIDTH, PANEL_HEIGHT)
-    }
-
-    fun reproduceWeb() {
-        val children = web.reproduce()
-        Collections.sort(children, Collections.reverseOrder<Any>())
-        web = children[0]
     }
 
     companion object {

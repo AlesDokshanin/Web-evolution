@@ -5,11 +5,16 @@ import web_kotlin.WebPanel
 import java.awt.BorderLayout
 import java.awt.Container
 import java.awt.Dimension
+import java.util.*
 import javax.swing.*
 import javax.swing.border.BevelBorder
 
 class MainWindow constructor(web: Web) {
     private var web = web
+        set(value) {
+            field = value
+            webPanel.web = value
+        }
 
     lateinit private var frame: JFrame
     private val controlsPanel = JPanel()
@@ -87,7 +92,7 @@ class MainWindow constructor(web: Web) {
         frame.layout = BorderLayout()
 
         statusPanel.border = BevelBorder(BevelBorder.LOWERED)
-        statusPanel.preferredSize = Dimension(frame!!.width, 20)
+        statusPanel.preferredSize = Dimension(frame.width, 20)
         statusPanel.layout = BoxLayout(statusPanel, BoxLayout.X_AXIS)
         statusLabel.horizontalAlignment = SwingConstants.LEFT
         statusPanel.add(statusLabel)
@@ -102,13 +107,14 @@ class MainWindow constructor(web: Web) {
             val value = sidesCountSpinner.value as Int
             try {
                 WebConfig.sidesCount = value
+                resetWeb()
 
             } catch (e: IllegalArgumentException) {
                 sidesCountSpinner.value = WebConfig.sidesCount
             }
 
-            resetWeb()
         }
+
         fliesCountSpinner.addChangeListener {
             val value = fliesCountSpinner.value as Int
             try {
@@ -130,7 +136,7 @@ class MainWindow constructor(web: Web) {
                     var updateProgressStep = totalIterations / 100 - 1
                     updateProgressStep = if (updateProgressStep < 1) 1 else updateProgressStep
                     for (i in 0..totalIterations - 1) {
-                        webPanel.reproduceWeb()
+                        reproduceWeb()
 
                         if (totalIterations >= 50 && i % updateProgressStep == 0)
                             setStatusBarWorkingText(100 * i / totalIterations)
@@ -159,6 +165,13 @@ class MainWindow constructor(web: Web) {
         }
         cbDynamicFlies.addActionListener { WebConfig.dynamicFlies = cbDynamicFlies.isSelected }
     }
+
+    private fun reproduceWeb() {
+        val children = web.reproduce()
+        Collections.sort(children, Collections.reverseOrder<Any>())
+        web = children[0]
+    }
+
 
     private fun resetWeb() {
         web = Web()

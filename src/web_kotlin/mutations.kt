@@ -56,7 +56,7 @@ private class SkeletonAngleMutation(web: Web) : WebMutation(web) {
             var upperBound = if (i != web.skeleton.points.lastIndex) web.skeleton.points[i + 1].angle else web.skeleton.points.first().angle
 
             lowerBound += WebConfig.minAngleBetweenSkeletonLines
-            upperBound += WebConfig.minAngleBetweenSkeletonLines
+            upperBound -= WebConfig.minAngleBetweenSkeletonLines
 
             if (lowerBound > upperBound)
                 upperBound += 2 * Math.PI
@@ -66,9 +66,21 @@ private class SkeletonAngleMutation(web: Web) : WebMutation(web) {
         } while (web.skeleton.isInvalid())
 
         web.skeleton.generatePolygon()
-        web.updateTrappingNet()
+        updateTrappingNet()
 
         super.apply()
+    }
+
+    private fun updateTrappingNet() {
+        for (i in 0..WebConfig.sidesCount - 1) {
+            val newAngle = web.skeleton.points[i].angle
+            for (circle in web.trappingNet) {
+                circle.points[i].angle = newAngle
+            }
+        }
+
+        web.trappingNet.forEach { circle -> circle.save() }
+        web.calculateTrappingNetLength()
     }
 
     private val vectorIndex: Int
@@ -108,35 +120,35 @@ private class TrappingNetMutation(web: Web) : WebMutation(web) {
     }
 
     override fun apply() {
-        val index = random.nextInt(web.trappingNet.size)
-        val oldCircleLength = web.trappingNet[index].length
+        val circleIndex = random.nextInt(web.trappingNet.lastIndex)
+        val oldCircleLength = web.trappingNet[circleIndex].length
 
         for (i in 0..WebConfig.sidesCount - 1) {
             var lowerBound: Int
             var upperBound: Int
 
-            if (index == 0)
+            if (circleIndex == 0)
                 lowerBound = MIN_TRAPPING_NET_CIRCLE_DISTANCE
             else
-                lowerBound = web.trappingNet[index - 1].points[i].distance + MIN_TRAPPING_NET_CIRCLE_DISTANCE
+                lowerBound = web.trappingNet[circleIndex - 1].points[i].distance + MIN_TRAPPING_NET_CIRCLE_DISTANCE
 
-            if (index == web.trappingNet.size - 1)
+            if (circleIndex == web.trappingNet.lastIndex)
                 upperBound = web.skeleton.points[i].distance - MIN_TRAPPING_NET_CIRCLE_DISTANCE
             else
-                upperBound = web.trappingNet[index + 1].points[i].distance - MIN_TRAPPING_NET_CIRCLE_DISTANCE
+                upperBound = web.trappingNet[circleIndex + 1].points[i].distance - MIN_TRAPPING_NET_CIRCLE_DISTANCE
 
-            val currentDistance = web.trappingNet[index].points[i].distance
+            val currentDistance = web.trappingNet[circleIndex].points[i].distance
             val lowerDistance = currentDistance - TRAPPING_NET_DISPERSION * MIN_TRAPPING_NET_CIRCLE_DISTANCE
             val upperDistance = currentDistance + TRAPPING_NET_DISPERSION * MIN_TRAPPING_NET_CIRCLE_DISTANCE
 
             lowerBound = Math.max(lowerBound, lowerDistance)
             upperBound = Math.min(upperBound, upperDistance)
 
-            web.trappingNet[index].points[i].distance = lowerBound + (random.nextDouble() * (upperBound - lowerBound)).toInt()
+            web.trappingNet[circleIndex].points[i].distance = lowerBound + (random.nextDouble() * (upperBound - lowerBound)).toInt()
         }
 
-        web.trappingNet[index].save()
-        val newCircleLength = web.trappingNet[index].length
+        web.trappingNet[circleIndex].save()
+        val newCircleLength = web.trappingNet[circleIndex].length
         web.trappingNetLength = web.trappingNetLength - oldCircleLength + newCircleLength
 
         super.apply()

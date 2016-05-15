@@ -3,7 +3,7 @@ package web_kotlin
 import java.awt.Point
 import java.awt.Polygon
 
-internal fun getPolygonFromPolarPoints(points: List<PolarPoint>): Polygon {
+internal fun buildPolygonFromPolarPoints(points: List<PolarPoint>): Polygon {
     val cartesianPoints: Array<Point> = Array(points.size, { i -> points[i].cartesianPoint() })
     val xPoints = cartesianPoints.map { it.x }.toIntArray()
     val yPoints = cartesianPoints.map { it.y }.toIntArray()
