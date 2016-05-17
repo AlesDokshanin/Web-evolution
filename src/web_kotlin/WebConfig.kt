@@ -21,14 +21,14 @@ object WebConfig {
         set(value) =
         when (value) {
             in MIN_SIDES..MAX_SIDES -> field = value
-            else -> throw IllegalArgumentException("Invalid web sides count: $value (should be in range [${MIN_SIDES}, ${MAX_SIDES}].")
+            else -> throw IllegalArgumentException("Invalid web sides count: $value (should be in range [$MIN_SIDES, $MAX_SIDES].")
         }
 
     var fliesCount = 100
         @Throws(IllegalArgumentException::class)
         set(value) {
             if (value < MIN_FLIES_COUNT || value > MAX_FLIES_COUNT) {
-                throw IllegalArgumentException("Flies count should be in range [${MIN_FLIES_COUNT}, ${MAX_FLIES_COUNT}]")
+                throw IllegalArgumentException("Flies count should be in range [$MIN_FLIES_COUNT, $MAX_FLIES_COUNT]")
             }
             field = value
         }

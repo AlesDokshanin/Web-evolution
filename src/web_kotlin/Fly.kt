@@ -11,8 +11,8 @@ internal class Fly(web: Web) {
     val web = web
 
     constructor(normalDistribution: Boolean, web: Web) : this(web) {
-        var x: Int
-        var y: Int
+        val x: Int
+        val y: Int
 
         if (normalDistribution) {
             x = random.nextInt() % (WIDTH / 2 - FLY_SIZE)

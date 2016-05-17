@@ -98,15 +98,20 @@ class Web : Comparable<Web> {
     }
 
     internal fun calculateEfficiency() {
+        val caught = calculateCaughtFlies()
+
+        // FIXME improve efficiency formula
+        efficiency = 2000 * caught.toDouble() / trappingNetLength
+    }
+
+    private fun calculateCaughtFlies(): Int {
         var caught = 0
         for (fly in flies!!) {
             if (fly.checkIfCaught()) {
                 caught++
             }
         }
-
-        // FIXME improve efficiency formula
-        efficiency = caught.toDouble()
+        return caught
     }
 
     private fun generateTrappingNet() {
@@ -121,7 +126,7 @@ class Web : Comparable<Web> {
         }
     }
 
-    protected fun mutate() {
+    private fun mutate() {
         val mutationType = WebMutationType.values()[random.nextInt(WebMutationType.values().size)]
         val mutation = WebMutation.Factory.create(mutationType, this)
         mutation.apply()

@@ -46,7 +46,7 @@ internal class WebSkeleton() {
         val shift = MIN_TRAPPING_NET_CIRCLE_DISTANCE
         for (dx in -1..1) {
             for (dy in -1..1) {
-                var p = Point(CENTER.x + dx * shift, CENTER.y + dy * shift)
+                val p = Point(CENTER.x + dx * shift, CENTER.y + dy * shift)
                 if (!polygon!!.contains(p))
                     return false
             }
