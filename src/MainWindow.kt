@@ -1,6 +1,6 @@
-import web_kotlin.Web
-import web_kotlin.WebConfig
-import web_kotlin.WebPanel
+import web.Web
+import web.WebConfig
+import web.WebPanel
 
 import java.awt.BorderLayout
 import java.awt.Container
@@ -39,7 +39,7 @@ class MainWindow constructor(web: Web) {
 
     private fun setUpControlsPanel() {
         controlsPanel.sidesCountSpinner.value = WebConfig.sidesCount
-        controlsPanel.fliesCountSpinner.value = WebConfig.fliesCount / 10
+        controlsPanel.fliesCountSpinner.value = WebConfig.fliesCount
         controlsPanel.maxLengthSpinner.value = WebConfig.maxTrappingNetLength / 1000
         controlsPanel.reproduceGenerationsSpinner.value = 1
     }

@@ -1,4 +1,4 @@
-package web_kotlin
+package web
 
 import java.awt.Color
 import java.awt.Point

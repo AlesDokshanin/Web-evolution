@@ -1,4 +1,4 @@
-package web_kotlin
+package web
 
 object WebConfig {
 

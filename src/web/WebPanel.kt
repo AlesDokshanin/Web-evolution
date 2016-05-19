@@ -1,4 +1,4 @@
-package web_kotlin
+package web
 
 import java.awt.*
 import java.awt.image.BufferedImage

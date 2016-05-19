@@ -1,4 +1,4 @@
-package web_kotlin
+package web
 
 import java.awt.Point
 
@@ -7,7 +7,8 @@ private val TRAPPING_NET_DISPERSION = 1
 enum class WebMutationType {
     SKELETON_ANGLE,
     SKELETON_DISTANCE,
-    TRAPPING_NET
+    TRAPPING_NET_ANGLE,
+    TRAPPING_NET_VECTOR,
 }
 
 internal abstract class WebMutation protected constructor(web: Web) {
@@ -39,8 +40,9 @@ internal abstract class WebMutation protected constructor(web: Web) {
         fun create(type: WebMutationType, web: Web): WebMutation {
             when (type) {
                 WebMutationType.SKELETON_ANGLE -> return SkeletonAngleMutation(web)
-                WebMutationType.TRAPPING_NET -> return TrappingNetMutation(web)
+                WebMutationType.TRAPPING_NET_ANGLE -> return TrappingNetCirleMutation(web)
                 WebMutationType.SKELETON_DISTANCE -> return SkeletonDistanceMutation(web)
+                WebMutationType.TRAPPING_NET_VECTOR -> return TrappingNetVectorMutation(web)
                 else -> throw IllegalArgumentException("Not supported web mutation type")
             }
         }
@@ -110,15 +112,7 @@ private class SkeletonDistanceMutation(web: Web) : WebMutation(web) {
         get() = random.nextInt(WebConfig.sidesCount)
 }
 
-private class TrappingNetMutation(web: Web) : WebMutation(web) {
-
-    protected fun deleteRandomCircle() {
-        val index = random.nextInt(web.trappingNet.size)
-        val deletedCircleLength = web.trappingNet[index].length
-        web.trappingNet.removeAt(index)
-        web.trappingNetLength -= deletedCircleLength
-    }
-
+private class TrappingNetCirleMutation(web: Web) : WebMutation(web) {
     override fun apply() {
         val circleIndex = random.nextInt(web.trappingNet.lastIndex)
         val oldCircleLength = web.trappingNet[circleIndex].length
@@ -151,6 +145,77 @@ private class TrappingNetMutation(web: Web) : WebMutation(web) {
         val newCircleLength = web.trappingNet[circleIndex].length
         web.trappingNetLength = web.trappingNetLength - oldCircleLength + newCircleLength
 
+        super.apply()
+    }
+}
+
+
+private class TrappingNetCircleRemovalMutation(web: Web) : WebMutation(web) {
+    // It doesn't works fine with current efficiency criteria, so we don't want to use this
+    override fun apply() {
+        if (web.trappingNet.size < 3)
+            return
+
+        val index = random.nextInt(web.trappingNet.size)
+        val deletedCircleLength = web.trappingNet[index].length
+        web.trappingNet.removeAt(index)
+        web.trappingNetLength -= deletedCircleLength
+    }
+}
+
+private class VectorPointDistances private constructor(pointsCount: Int, minDistance: Int, maxDistance: Int, minDistanceBetweenPoints: Int) {
+
+    internal val distances = mutableListOf<Int>()
+    private var pointsCount: Int = pointsCount
+    private var minDistance: Int = minDistance
+    private var maxDistance: Int = maxDistance
+    private var minDistanceBetweenPoints: Int = minDistanceBetweenPoints
+
+
+    init {
+        generate()
+    }
+
+    private fun generate() {
+        while (distances.size < pointsCount) {
+            val newDistance = minDistance + random.nextInt(maxDistance - minDistance)
+            if (canInsertPoint(newDistance))
+                distances.add(newDistance)
+
+        }
+
+        distances.sort()
+    }
+
+
+    private fun canInsertPoint(newPointDistance: Int): Boolean {
+        return distances.all { Math.abs(it - newPointDistance) >= minDistanceBetweenPoints }
+    }
+
+    companion object Factory {
+        internal fun generate(pointsCount: Int, maxDistance: Int, minDistance: Int = MIN_TRAPPING_NET_CIRCLE_DISTANCE,
+                              minDistanceBetweenPoints: Int = MIN_TRAPPING_NET_CIRCLE_DISTANCE): VectorPointDistances {
+
+            return VectorPointDistances(pointsCount, minDistance, maxDistance, minDistanceBetweenPoints)
+
+        }
+    }
+}
+
+private class TrappingNetVectorMutation(web: Web) : WebMutation(web) {
+
+    override fun apply() {
+        val vectorIndex = random.nextInt(web.trappingNet.size)
+        val maxDistance = web.skeleton.points[vectorIndex].distance - MIN_TRAPPING_NET_CIRCLE_DISTANCE
+        val pointsCount = web.trappingNet.size
+
+        val distances = VectorPointDistances.generate(pointsCount, maxDistance).distances
+        distances.forEachIndexed { i, distance ->
+            web.trappingNet[i].points[vectorIndex].distance = distance
+            web.trappingNet[i].save()
+        }
+
+        web.trappingNetLength = web.trappingNet.map { it.length }.sum()
         super.apply()
     }
 }
