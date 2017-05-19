@@ -12,7 +12,7 @@ internal class TrappingNetCircle {
         private set
 
     constructor(web: Web) {
-        generate(web.trappingNet, web.skeleton.points)
+        generate(web.skeleton.points)
     }
 
     constructor(circle: TrappingNetCircle) {
@@ -36,18 +36,10 @@ internal class TrappingNetCircle {
         calculateLength()
     }
 
-    internal fun generate(trappingNet: List<TrappingNetCircle>, skeletonPoints: List<PolarPoint>) {
+    internal fun generate(skeletonPoints: List<PolarPoint>) {
         for (i in 0..WebConfig.sidesCount - 1) {
-            var lowerBound = MIN_TRAPPING_NET_CIRCLE_DISTANCE
-            if (!trappingNet.isEmpty()) {
-                lowerBound += trappingNet.last().points[i].distance
-            }
-            val maxDistance = skeletonPoints[i].distance - MIN_TRAPPING_NET_CIRCLE_DISTANCE
-            if (lowerBound > maxDistance) {
-                fits = false
-                return
-            }
-            val upperBound = Math.min(maxDistance, lowerBound + (TRAPPING_NET_CIRCLES_DISPERSION * MIN_TRAPPING_NET_CIRCLE_DISTANCE).toInt())
+            val lowerBound = MIN_TRAPPING_NET_CIRCLE_DISTANCE
+            val upperBound = skeletonPoints[i].distance - MIN_TRAPPING_NET_CIRCLE_DISTANCE
             val angle = skeletonPoints[i].angle
             val distance = (lowerBound + random.nextDouble() * (upperBound - lowerBound)).toInt()
             points.add(PolarPoint(angle, distance))

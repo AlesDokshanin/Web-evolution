@@ -6,9 +6,9 @@ import java.awt.Point
 internal val WIDTH = 800
 internal val HEIGHT = 800
 internal val CENTER: Point = Point(WIDTH / 2, HEIGHT / 2)
+internal val MIN_TRAPPING_NET_CIRCLES_COUNT = 3
 internal val MIN_SKELETON_DISTANCE_FROM_CENTER = (Math.min(HEIGHT, WIDTH) / 5).toInt()
-internal val MIN_TRAPPING_NET_CIRCLE_DISTANCE = Math.min(WIDTH, HEIGHT) / 75;
-internal val TRAPPING_NET_CIRCLES_DISPERSION = 8.0
+internal val MIN_TRAPPING_NET_CIRCLE_DISTANCE = Math.min(WIDTH, HEIGHT) / 75
 internal val FLY_SIZE = (Math.min(WIDTH, HEIGHT) / 50).toInt()
 internal val MIN_SIDES = 10
 internal val MAX_SIDES = 20

@@ -51,7 +51,7 @@ class WebPanel(web: Web) : JPanel() {
     private fun drawTrappingNet(g: Graphics2D) {
         g.color = Color(255, 0, 0)
         g.stroke = BasicStroke(2f)
-        for (circle in web.trappingNet)
+        for (circle in web.trappingNet.circles)
             g.drawPolygon(circle.polygon)
     }
 }

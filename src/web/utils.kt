@@ -11,13 +11,8 @@ internal fun buildPolygonFromPolarPoints(points: List<PolarPoint>): Polygon {
     return Polygon(xPoints, yPoints, cartesianPoints.size)
 }
 
-internal class PolarPoint(angle: Double, distance: Int) : Comparable<PolarPoint> {
-
-    var angle = angle
-    var distance = distance
-
+internal class PolarPoint(internal var angle: Double, internal var distance: Int) : Comparable<PolarPoint> {
     constructor(pt: Point) : this(polarAngleFromCartesian(pt.x, pt.y), polarDistanceFromCartesian(pt.x, pt.y))
-
     constructor(ppt: PolarPoint) : this(ppt.angle, ppt.distance)
 
     override fun compareTo(other: PolarPoint): Int {

@@ -30,7 +30,7 @@ internal class Fly(web: Web) {
 
     internal fun checkIfCaught(): Boolean {
         caught = false
-        loop@ for (circle in web.trappingNet) {
+        loop@ for (circle in web.trappingNet.circles) {
             for (i in 0..circle.points.lastIndex) {
                 val a = circle.points[i].cartesianPoint()
                 val b = circle.points[(i + 1) % circle.points.size].cartesianPoint()

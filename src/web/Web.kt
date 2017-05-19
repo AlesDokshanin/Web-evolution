@@ -7,20 +7,24 @@ internal val random: Random = Random()
 
 
 class Web : Comparable<Web> {
-    internal var trappingNetLength = 0
     var generation = 1
         internal set
+
     var efficiency = 0.0
         internal set
+
     internal var skeleton = WebSkeleton()
-    internal var trappingNet = ArrayList<TrappingNetCircle>()
+    internal var trappingNet = TrappingNet(this)
     internal var flies: ArrayList<Fly>? = null
+
 
     constructor() {
         generateFlies()
         build()
-        calculateTrappingNetLength()
     }
+
+    internal val trappingNetLength: Int
+        get() = this.trappingNet.length
 
     constructor(w: Web) {
         // Primitives
@@ -30,8 +34,7 @@ class Web : Comparable<Web> {
         // Deep copying
         skeleton = WebSkeleton(w.skeleton)
 
-        trappingNet = ArrayList<TrappingNetCircle>(w.trappingNet.size)
-        w.trappingNet.forEach { circle -> trappingNet.add(TrappingNetCircle(circle)) }
+        trappingNet = TrappingNet(w.trappingNet)
 
         if (!WebConfig.dynamicFlies) {
             flies = ArrayList<Fly>(w.flies!!.size)
@@ -40,9 +43,6 @@ class Web : Comparable<Web> {
         } else {
             generateFlies()
         }
-
-        trappingNetLength = w.trappingNetLength
-
     }
 
     override fun compareTo(other: Web): Int {
@@ -50,13 +50,6 @@ class Web : Comparable<Web> {
         if (value == 0)
             value = -1 * java.lang.Double.compare(this.trappingNetLength.toDouble(), other.trappingNetLength.toDouble())
         return value
-    }
-
-    internal fun calculateTrappingNetLength() {
-        trappingNetLength = 0
-
-        for (circle in trappingNet)
-            trappingNetLength += circle.length
     }
 
     private fun generateFlies() {
@@ -71,11 +64,9 @@ class Web : Comparable<Web> {
     }
 
     private fun build() {
-        skeleton = WebSkeleton()
-        trappingNet = ArrayList<TrappingNetCircle>()
-        skeleton.generate()
-        generateTrappingNet()
-        calculateTrappingNetLength()
+        this.skeleton = WebSkeleton()
+        this.skeleton.generate()
+        this.trappingNet.generate()
         calculateEfficiency()
     }
 
@@ -91,9 +82,7 @@ class Web : Comparable<Web> {
             generateFlies()
 
         calculateEfficiency()
-
         children.add(this)
-
         return children
     }
 
@@ -105,30 +94,14 @@ class Web : Comparable<Web> {
     }
 
     private fun calculateCaughtFlies(): Int {
-        var caught = 0
-        for (fly in flies!!) {
-            if (fly.checkIfCaught()) {
-                caught++
-            }
-        }
+        val caught = flies!!.count { it.checkIfCaught() }
         return caught
     }
 
-    private fun generateTrappingNet() {
-        trappingNet.clear()
-
-        while (true) {
-            val circle = TrappingNetCircle(this)
-            if (circle.fits)
-                trappingNet.add(circle)
-            else
-                break
-        }
-    }
 
     private fun mutate() {
         val mutationType = WebMutationType.values()[random.nextInt(WebMutationType.values().size)]
         val mutation = WebMutation.Factory.create(mutationType, this)
-        mutation.apply()
+        mutation.run()
     }
 }
