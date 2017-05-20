@@ -89,8 +89,7 @@ class Web : Comparable<Web> {
     internal fun calculateEfficiency() {
         val caught = calculateCaughtFlies()
 
-        // FIXME improve efficiency formula
-        efficiency = 2000 * caught.toDouble() / trappingNetLength
+        efficiency = caught.toDouble() +  (1 / trappingNetLength)
     }
 
     private fun calculateCaughtFlies(): Int {
