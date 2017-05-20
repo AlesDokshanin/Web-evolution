@@ -147,7 +147,7 @@ private class SkeletonAngleMutation(web: Web) : WebMutation(web) {
 
     private class TrappingNetVectorRegenerateMutation(web: Web) : WebMutation(web) {
         override fun apply() {
-            val vectorIndex = random.nextInt(web.trappingNet.circles.size)
+            val vectorIndex = random.nextInt(WebConfig.sidesCount)
             val maxDistance = web.skeleton.points[vectorIndex].distance
             val pointsCount = web.trappingNet.circles.size
 
@@ -162,7 +162,7 @@ private class SkeletonAngleMutation(web: Web) : WebMutation(web) {
 
 private class TrappingNetVectorRescaleMutation(web: Web): WebMutation(web) {
     override fun apply() {
-        val vectorIndex = random.nextInt(web.trappingNet.circles.size)
+        val vectorIndex = random.nextInt(WebConfig.sidesCount)
         val maxDistance = web.skeleton.points[vectorIndex].distance
         val minFactor = 0.5
         val maxExistingDistance = web.trappingNet.circles.map { it.points[vectorIndex].distance }.max()
