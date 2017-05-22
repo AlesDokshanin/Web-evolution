@@ -30,6 +30,7 @@ internal class WebSkeleton() {
         while (maxDistance <= MIN_SKELETON_DISTANCE_FROM_CENTER) {
             bound = Point((0.5 * WIDTH * Math.cos(angle)).toInt(), (0.5 * HEIGHT * Math.sin(angle)).toInt())
             maxDistance = bound.distance(0.0, 0.0).toInt()
+
         }
 
         val distance = (MIN_SKELETON_DISTANCE_FROM_CENTER +
@@ -39,7 +40,7 @@ internal class WebSkeleton() {
     }
 
     private fun pointIsValid(p: PolarPoint, points: Iterable<PolarPoint>): Boolean {
-        return points.all({ currPoint -> Math.abs(p.angle - currPoint.angle) >= WebConfig.minAngleBetweenSkeletonLines })
+        return true
     }
 
     private fun centerFitsIntoPolygon(): Boolean {
@@ -64,8 +65,10 @@ internal class WebSkeleton() {
 
         for (i in 1..WebConfig.sidesCount) {
             var p = generatePoint()
-            while (!pointIsValid(p, points))
+            while (!pointIsValid(p, points)) {
                 p = generatePoint()
+
+            }
             points.add(p)
         }
     }

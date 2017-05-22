@@ -15,7 +15,7 @@ class Web : Comparable<Web> {
 
     internal var skeleton = WebSkeleton()
     internal var trappingNet = TrappingNet(this)
-    internal var flies: ArrayList<Fly>? = null
+    internal var flies: MutableList<Fly>? = null
 
 
     constructor() {
@@ -33,13 +33,12 @@ class Web : Comparable<Web> {
 
         // Deep copying
         skeleton = WebSkeleton(w.skeleton)
-
         trappingNet = TrappingNet(w.trappingNet)
 
         if (!WebConfig.dynamicFlies) {
             flies = ArrayList<Fly>(w.flies!!.size)
             for (f in w.flies!!)
-                flies!!.add(Fly(f, this))
+                flies!!.add(Fly(f))
         } else {
             generateFlies()
         }
@@ -53,14 +52,14 @@ class Web : Comparable<Web> {
     }
 
     private fun generateFlies() {
-        flies = ArrayList<Fly>(WebConfig.fliesCount)
-        for (i in 0..WebConfig.fliesCount - 1) {
-            if (WebConfig.normalFliesDistribution || i <= WebConfig.fliesCount * PART_OF_NORMAL_DISTRIBUTED_FLIES)
-                flies!!.add(Fly(true, this))
-            else
-                flies!!.add(Fly(false, this))
-        }
+        flies = mutableListOf<Fly>()
 
+        (0..WebConfig.fliesCount - 1).forEach { i ->
+            val abnormalDistribution = !WebConfig.normalFliesDistribution &&
+                    i > WebConfig.fliesCount * PART_OF_NORMAL_DISTRIBUTED_FLIES
+            val normalDistribution = !abnormalDistribution
+            flies!!.add(Fly.Factory.generate(normalDistribution))
+        }
     }
 
     private fun build() {
@@ -88,12 +87,12 @@ class Web : Comparable<Web> {
 
     internal fun calculateEfficiency() {
         val caught = calculateCaughtFlies()
-
         efficiency = caught.toDouble() +  (1 / trappingNetLength)
     }
 
     private fun calculateCaughtFlies(): Int {
-        val caught = flies!!.count { it.checkIfCaught() }
+        flies!!.forEach { f -> trappingNet.tryToCatch(f) }
+        val caught = flies!!.count { it.isCaught == true }
         return caught
     }
 

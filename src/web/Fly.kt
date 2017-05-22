@@ -2,52 +2,49 @@ package web
 
 import java.awt.Color
 import java.awt.Graphics2D
-import java.awt.geom.Line2D
 import java.awt.geom.Rectangle2D
 
-internal class Fly(web: Web) {
-    lateinit var body: Rectangle2D
-    var caught = false
-    val web = web
+internal class Fly(val center: PolarPoint) {
+    var isCaught: Boolean? = null
 
-    constructor(normalDistribution: Boolean, web: Web) : this(web) {
-        val x: Int
-        val y: Int
-
-        if (normalDistribution) {
-            x = random.nextInt() % (WIDTH / 2 - FLY_SIZE)
-            y = random.nextInt() % (HEIGHT / 2 - FLY_SIZE)
-        } else {
-            x = random.nextInt() % (WIDTH / 4 - FLY_SIZE) + WIDTH / 4
-            y = random.nextInt() % (HEIGHT / 4 - FLY_SIZE) + HEIGHT / 4
-        }
-        body = Rectangle2D.Float(x.toFloat(), y.toFloat(), FLY_SIZE.toFloat(), FLY_SIZE.toFloat())
+    val rect: Rectangle2D.Float by lazy {
+        generateRectangle()
     }
 
-    constructor(f: Fly, web: Web) : this(web) {
-        body = Rectangle2D.Float(f.body.x.toFloat(), f.body.y.toFloat(), FLY_SIZE.toFloat(), FLY_SIZE.toFloat())
+    constructor(fly: Fly) : this(fly.center)
+
+    private fun generateRectangle(): Rectangle2D.Float {
+        val pt = center.toCartesian()
+        val r = Rectangle2D.Float(pt.x.toFloat() - FLY_SIZE / 2,
+                pt.y.toFloat() - FLY_SIZE / 2,
+                FLY_SIZE.toFloat(), FLY_SIZE.toFloat())
+        return r
     }
 
-    internal fun checkIfCaught(): Boolean {
-        caught = false
-        loop@ for (circle in web.trappingNet.circles) {
-            for (i in 0..circle.points.lastIndex) {
-                val a = circle.points[i].cartesianPoint()
-                val b = circle.points[(i + 1) % circle.points.size].cartesianPoint()
-                val line = Line2D.Float(a, b)
-                if (body.intersectsLine(line)) {
-                    caught = true
-                    break@loop
-                }
-            }
+    internal companion object Factory {
+        internal fun generate(normalDistribution: Boolean): Fly {
+            val center = generateCenterPoint(normalDistribution)
+            val instance = Fly(center)
+            return instance
         }
-        return caught
+
+        private fun generateCenterPoint(normalDistribution: Boolean): PolarPoint {
+            val maxAngle: Double = 2 * Math.PI
+            val minAngle: Double = if (normalDistribution) 0.0 else 1.5 * Math.PI
+            val phi = minAngle + random.nextDouble() * (maxAngle - minAngle)
+
+            val maxDistance = maxDistanceForAngle(phi)
+
+            val distance = (random.nextDouble() * maxDistance).toInt()
+            val point = PolarPoint(phi, distance)
+            return point
+        }
     }
 
     internal fun draw(g: Graphics2D) {
-        g.color = if (caught) CAUGHT_FLY_COLOR else UNCAUGHT_FLY_COLOR
+        g.color = if (isCaught == true) CAUGHT_FLY_COLOR else UNCAUGHT_FLY_COLOR
         g.background = Color.BLACK
-        g.fillRect((CENTER.x + body.x).toInt(), (CENTER.y + body.y).toInt(), FLY_SIZE, FLY_SIZE)
-        g.drawRect((CENTER.x + body.x).toInt(), (CENTER.y + body.y).toInt(), FLY_SIZE, FLY_SIZE)
+        g.fillRect((CENTER.x + rect.x).toInt(), (CENTER.y + rect.y).toInt(), FLY_SIZE, FLY_SIZE)
+        g.drawRect((CENTER.x + rect.x).toInt(), (CENTER.y + rect.y).toInt(), FLY_SIZE, FLY_SIZE)
     }
 }

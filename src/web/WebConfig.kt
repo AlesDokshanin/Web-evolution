@@ -2,12 +2,12 @@ package web
 
 object WebConfig {
 
-    var drawFlies = false
+    var drawFlies = true
     var dynamicFlies = false
     var normalFliesDistribution = true
 
 
-    internal var maxTrappingNetLength = 100 * 1000
+    internal var maxTrappingNetLength = 5 * 1000
         @Throws(IllegalArgumentException::class)
         set(value) {
             when (value) {
@@ -33,6 +33,6 @@ object WebConfig {
             field = value
         }
 
-    internal val minAngleBetweenSkeletonLines = Math.PI / (3 * WebConfig.sidesCount)
+    internal val minAngleBetweenSkeletonLines = Math.PI / (5 * WebConfig.sidesCount)
 
 }

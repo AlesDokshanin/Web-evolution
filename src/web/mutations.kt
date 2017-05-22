@@ -99,6 +99,8 @@ private class SkeletonAngleMutation(web: Web) : WebMutation(web) {
 
                 val lowerBound = web.trappingNet.circles.map { c -> c.points[index].distance }.max()!!.toInt()
                 web.skeleton.points[index].distance = (lowerBound + random.nextDouble() * (maxDistance - lowerBound)).toInt()
+                // FIXME: hangs sometimes
+
             } while (web.skeleton.isInvalid())
 
             web.skeleton.generatePolygon()
