@@ -43,7 +43,7 @@ internal abstract class WebMutation protected constructor(web: Web) {
 
 private class TrappingNetAddCircleMutation(web: Web) : WebMutation(web) {
     override fun apply() {
-        if (web.trappingNet.canAddMoreCircles)
+        if (web.trappingNet.canAddCircle())
             web.trappingNet.addNewCircle()
     }
 }
@@ -66,7 +66,6 @@ private class SkeletonAngleMutation(web: Web) : WebMutation(web) {
 
         } while (web.skeleton.isInvalid())
 
-        web.skeleton.generatePolygon()
         updateTrappingNet()
     }
 
@@ -102,8 +101,6 @@ private class SkeletonAngleMutation(web: Web) : WebMutation(web) {
                 // FIXME: hangs sometimes
 
             } while (web.skeleton.isInvalid())
-
-            web.skeleton.generatePolygon()
         }
     }
 

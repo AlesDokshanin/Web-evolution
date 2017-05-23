@@ -8,7 +8,7 @@ internal class TrappingNet(internal val web: Web) {
 
     internal fun generate() {
         this.generateCircles()
-        this.recalculateLength()
+        this.save()
     }
 
     internal constructor(net: TrappingNet) : this(net.web) {
@@ -27,8 +27,9 @@ internal class TrappingNet(internal val web: Web) {
         }
     }
 
-    internal val canAddMoreCircles: Boolean
-        get() = this.length < WebConfig.maxTrappingNetLength
+    internal fun canAddCircle(): Boolean {
+        return this.length < WebConfig.maxTrappingNetLength
+    }
 
     internal fun addNewCircle() {
         val circle = TrappingNetCircle(this.web)
@@ -44,5 +45,9 @@ internal class TrappingNet(internal val web: Web) {
     internal fun draw(g: Graphics2D) {
         for(circle in circles)
             circle.draw(g)
+    }
+
+    internal fun save() {
+        this.recalculateLength()
     }
 }

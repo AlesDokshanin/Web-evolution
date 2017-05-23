@@ -7,9 +7,8 @@ import java.awt.geom.Rectangle2D
 internal class Fly(val center: PolarPoint) {
     var isCaught: Boolean? = null
 
-    val rect: Rectangle2D.Float by lazy {
-        generateRectangle()
-    }
+    val rect: Rectangle2D.Float
+        get() = generateRectangle()
 
     constructor(fly: Fly) : this(fly.center)
 
