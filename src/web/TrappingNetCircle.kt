@@ -1,22 +1,24 @@
 package web
 
-import java.awt.BasicStroke
-import java.awt.Color
-import java.awt.Graphics2D
 import java.awt.geom.Line2D
 
-internal class TrappingNetCircle {
+internal class TrappingNetCircle private constructor() {
     internal val points = mutableListOf<PolarPoint>()
     internal var length = 0
         private set
 
-    constructor(web: Web) {
-        generate(web.skeleton.points)
+    constructor(circle: TrappingNetCircle): this() {
+        circle.points.forEach { pt -> points.add(PolarPoint(pt)) }
+        calculateLength()
     }
 
-    constructor(circle: TrappingNetCircle) {
-        circle.points.forEach { pt -> points.add(PolarPoint(pt)) }
-        save()
+    companion object Factory {
+        fun createOn(skeleton: Skeleton): TrappingNetCircle {
+            val circle = TrappingNetCircle()
+            circle.generate(skeleton)
+            circle.save()
+            return circle
+        }
     }
 
     internal fun calculateLength() {
@@ -31,11 +33,11 @@ internal class TrappingNetCircle {
         calculateLength()
     }
 
-    internal fun generate(skeletonPoints: List<PolarPoint>) {
-        for (i in 0..WebConfig.sidesCount - 1) {
+    internal fun generate(skeleton: Skeleton) {
+        for (i in 0..Config.sidesCount - 1) {
             val lowerBound = 0
-            val upperBound = skeletonPoints[i].distance
-            val angle = skeletonPoints[i].angle
+            val upperBound = skeleton.points[i].distance
+            val angle = skeleton.points[i].angle
             val distance = (lowerBound + random.nextDouble() * (upperBound - lowerBound)).toInt()
             points.add(PolarPoint(angle, distance))
         }
@@ -54,18 +56,5 @@ internal class TrappingNetCircle {
             }
         }
         return false
-    }
-
-    internal fun draw(g: Graphics2D) {
-        g.color = Color(255, 0, 0)
-        g.stroke = BasicStroke(2f)
-
-        (0..points.lastIndex).forEach { i ->
-            val p1 = points[i].toCartesian()
-            p1.translate(WIDTH / 2, HEIGHT / 2)
-            val p2 = points[(i + 1) % points.size].toCartesian()
-            p2.translate(WIDTH / 2, HEIGHT / 2)
-            g.drawLine(p1.x, p1.y, p2.x, p2.y)
-        }
     }
 }

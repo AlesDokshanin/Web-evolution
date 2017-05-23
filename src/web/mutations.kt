@@ -11,9 +11,7 @@ enum class WebMutationType {
     TRAPPING_NET_REMOVE_CIRCLE
 }
 
-internal abstract class WebMutation protected constructor(web: Web) {
-    val web = web
-
+internal abstract class WebMutation protected constructor(protected val web: Web) {
     internal fun run() {
         this.apply()
         this.postMutationStuff()
@@ -43,21 +41,23 @@ internal abstract class WebMutation protected constructor(web: Web) {
 
 private class TrappingNetAddCircleMutation(web: Web) : WebMutation(web) {
     override fun apply() {
-        if (web.trappingNet.canAddCircle())
-            web.trappingNet.addNewCircle()
+        if (web.trappingNet.canAddCircle(web.skeleton)) {
+            web.trappingNet.addNewCircle(web.skeleton)
+            web.trappingNet.save()
+        }
     }
 }
 
 private class SkeletonAngleMutation(web: Web) : WebMutation(web) {
     override fun apply() {
         do {
-            val i = this.pickVectorIndex()
+            val i = pickVectorIndex()
 
             var lowerBound = if (i != 0) web.skeleton.points[i - 1].angle else web.skeleton.points.last().angle
             var upperBound = if (i != web.skeleton.points.lastIndex) web.skeleton.points[i + 1].angle else web.skeleton.points.first().angle
 
-            lowerBound += WebConfig.minAngleBetweenSkeletonLines
-            upperBound -= WebConfig.minAngleBetweenSkeletonLines
+            lowerBound += Config.minAngleBetweenSkeletonLines
+            upperBound -= Config.minAngleBetweenSkeletonLines
 
             if (lowerBound > upperBound)
                 upperBound += 2 * Math.PI
@@ -70,7 +70,7 @@ private class SkeletonAngleMutation(web: Web) : WebMutation(web) {
     }
 
     private fun updateTrappingNet() {
-        for (i in 0..WebConfig.sidesCount - 1) {
+        for (i in 0..Config.sidesCount - 1) {
             val newAngle = web.skeleton.points[i].angle
             for (circle in web.trappingNet.circles) {
                 circle.points[i].angle = newAngle
@@ -78,19 +78,18 @@ private class SkeletonAngleMutation(web: Web) : WebMutation(web) {
         }
 
         web.trappingNet.circles.forEach { circle -> circle.save() }
-        web.trappingNet.recalculateLength()
+        web.trappingNet.save()
     }
 
     private fun pickVectorIndex(): Int {
-        return random.nextInt(WebConfig.sidesCount)
+        return random.nextInt(Config.sidesCount)
     }
 }
 
     private class SkeletonDistanceMutation(web: Web) : WebMutation(web) {
-
         override fun apply() {
             do {
-                val index = random.nextInt(WebConfig.sidesCount)
+                val index = random.nextInt(Config.sidesCount)
 
                 val angle = web.skeleton.points[index].angle
                 val bound = Point((0.5 * WIDTH.toDouble() * Math.cos(angle)).toInt(), (0.5 * HEIGHT.toDouble() * Math.sin(angle)).toInt())
@@ -146,7 +145,7 @@ private class SkeletonAngleMutation(web: Web) : WebMutation(web) {
 
     private class TrappingNetVectorRegenerateMutation(web: Web) : WebMutation(web) {
         override fun apply() {
-            val vectorIndex = random.nextInt(WebConfig.sidesCount)
+            val vectorIndex = random.nextInt(Config.sidesCount)
             val maxDistance = web.skeleton.points[vectorIndex].distance
             val pointsCount = web.trappingNet.circles.size
 
@@ -161,7 +160,7 @@ private class SkeletonAngleMutation(web: Web) : WebMutation(web) {
 
 private class TrappingNetVectorRescaleMutation(web: Web): WebMutation(web) {
     override fun apply() {
-        val vectorIndex = random.nextInt(WebConfig.sidesCount)
+        val vectorIndex = random.nextInt(Config.sidesCount)
         val maxDistance = web.skeleton.points[vectorIndex].distance
         val minFactor = 0.5
         val maxExistingDistance = web.trappingNet.circles.map { it.points[vectorIndex].distance }.max()

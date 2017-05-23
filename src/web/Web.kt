@@ -5,68 +5,58 @@ import java.util.*
 
 internal val random: Random = Random()
 
+private fun copyFlies(flies: MutableList<Fly>): MutableList<Fly> {
+    val copy = mutableListOf<Fly>()
+    flies.forEach { f -> copy.add(Fly(f)) }
+    return copy
+}
 
-class Web : Comparable<Web> {
+class Web internal constructor(val skeleton: Skeleton, val trappingNet: TrappingNet, val flies: MutableList<Fly>) : Comparable<Web> {
     var generation = 1
         internal set
 
     var efficiency = 0.0
         internal set
 
-    internal var skeleton = WebSkeleton()
-    internal var trappingNet = TrappingNet(this)
-    internal var flies: MutableList<Fly>? = null
-
-
-    constructor() {
-        generateFlies()
-        build()
+    init {
+        calculateEfficiency()
     }
 
-    internal val trappingNetLength: Int
-        get() = this.trappingNet.length
+    companion object Factory {
+        fun generate(): Web {
+            val skeleton = Skeleton.generate()
+            val trappingNet = TrappingNet.generateFor(skeleton)
+            val flies = generateFlies()
+            val web = Web(skeleton, trappingNet, flies)
+            return web
+        }
 
-    constructor(w: Web) {
-        // Primitives
+        private fun generateFlies(): MutableList<Fly> {
+            val flies = mutableListOf<Fly>()
+            (0..Config.fliesCount - 1).forEach { i ->
+                val abnormalDistribution = !Config.normalFliesDistribution &&
+                        i > Config.fliesCount * PART_OF_NORMAL_DISTRIBUTED_FLIES
+                val normalDistribution = !abnormalDistribution
+                flies.add(Fly.generate(normalDistribution))
+            }
+            return flies
+        }
+    }
+
+    constructor(w: Web): this(Skeleton(w.skeleton), TrappingNet(w.trappingNet), copyFlies(w.flies)) {
         generation = w.generation
         efficiency = w.efficiency
-
-        // Deep copying
-        skeleton = WebSkeleton(w.skeleton)
-        trappingNet = TrappingNet(w.trappingNet)
-
-        if (!WebConfig.dynamicFlies) {
-            flies = ArrayList<Fly>(w.flies!!.size)
-            for (f in w.flies!!)
-                flies!!.add(Fly(f))
-        } else {
-            generateFlies()
-        }
     }
 
     override fun compareTo(other: Web): Int {
         var value = java.lang.Double.compare(this.efficiency, other.efficiency)
         if (value == 0)
-            value = -1 * java.lang.Double.compare(this.trappingNetLength.toDouble(), other.trappingNetLength.toDouble())
+            value = -1 * java.lang.Double.compare(this.trappingNet.length.toDouble(), other.trappingNet.length.toDouble())
         return value
     }
 
     private fun generateFlies() {
-        flies = mutableListOf<Fly>()
 
-        (0..WebConfig.fliesCount - 1).forEach { i ->
-            val abnormalDistribution = !WebConfig.normalFliesDistribution &&
-                    i > WebConfig.fliesCount * PART_OF_NORMAL_DISTRIBUTED_FLIES
-            val normalDistribution = !abnormalDistribution
-            flies!!.add(Fly.Factory.generate(normalDistribution))
-        }
-    }
-
-    private fun build() {
-        this.skeleton = WebSkeleton()
-        this.skeleton.generate()
-        this.trappingNet.generate()
-        calculateEfficiency()
     }
 
     internal fun reproduce(): ArrayList<Web> {
@@ -77,7 +67,7 @@ class Web : Comparable<Web> {
             children.add(child)
         }
         generation++
-        if (WebConfig.dynamicFlies)
+        if (Config.dynamicFlies)
             generateFlies()
 
         calculateEfficiency()
@@ -87,12 +77,12 @@ class Web : Comparable<Web> {
 
     internal fun calculateEfficiency() {
         val caught = calculateCaughtFlies()
-        efficiency = caught.toDouble() +  (1 / trappingNetLength)
+        efficiency = caught.toDouble() + (1 / trappingNet.length)
     }
 
     private fun calculateCaughtFlies(): Int {
-        flies!!.forEach { f -> trappingNet.tryToCatch(f) }
-        val caught = flies!!.count { it.isCaught == true }
+        flies.forEach { f -> trappingNet.tryToCatch(f) }
+        val caught = flies.count { it.isCaught == true }
         return caught
     }
 

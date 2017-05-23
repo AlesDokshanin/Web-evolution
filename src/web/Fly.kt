@@ -1,7 +1,5 @@
 package web
 
-import java.awt.Color
-import java.awt.Graphics2D
 import java.awt.geom.Rectangle2D
 
 internal class Fly(val center: PolarPoint) {
@@ -38,12 +36,5 @@ internal class Fly(val center: PolarPoint) {
             val point = PolarPoint(phi, distance)
             return point
         }
-    }
-
-    internal fun draw(g: Graphics2D) {
-        g.color = if (isCaught == true) CAUGHT_FLY_COLOR else UNCAUGHT_FLY_COLOR
-        g.background = Color.BLACK
-        g.fillRect((CENTER.x + rect.x).toInt(), (CENTER.y + rect.y).toInt(), FLY_SIZE, FLY_SIZE)
-        g.drawRect((CENTER.x + rect.x).toInt(), (CENTER.y + rect.y).toInt(), FLY_SIZE, FLY_SIZE)
     }
 }

@@ -3,10 +3,21 @@ package web
 import java.awt.*
 import java.util.*
 
-internal class WebSkeleton() {
+internal class Skeleton private constructor() {
     var points = mutableListOf<PolarPoint>()
 
-    constructor(skeleton: WebSkeleton) : this() {
+    companion object Factory {
+        fun generate(): Skeleton {
+            val skeleton = Skeleton()
+            do {
+                skeleton.generatePoints()
+                Collections.sort(skeleton.points)
+            } while (skeleton.isInvalid())
+            return skeleton
+        }
+    }
+
+    constructor(skeleton: Skeleton) : this() {
         skeleton.points.forEach { points.add(PolarPoint(it)) }
     }
 
@@ -38,7 +49,7 @@ internal class WebSkeleton() {
         return true
     }
 
-    private fun generatePolygon(): Polygon {
+    internal fun generatePolygon(): Polygon {
         val polygon = buildPolygonFromPolarPoints(this.points)
         return polygon
     }
@@ -47,11 +58,10 @@ internal class WebSkeleton() {
         return !centerFitsIntoPolygon()
     }
 
-
     private fun generatePoints() {
         points.clear()
 
-        for (i in 1..WebConfig.sidesCount) {
+        for (i in 1..Config.sidesCount) {
             var p = generatePoint()
             while (!pointIsValid(p, points)) {
                 p = generatePoint()
@@ -60,22 +70,5 @@ internal class WebSkeleton() {
         }
     }
 
-    internal fun draw(g: Graphics2D) {
-        g.stroke = BasicStroke(2f)
-        g.color = Color(128, 128, 128)
 
-        val polygon = this.generatePolygon()
-        polygon.translate(WIDTH / 2, HEIGHT / 2)
-        g.drawPolygon(polygon)
-
-        for (i in 0..polygon!!.npoints - 1)
-            g.drawLine(polygon!!.xpoints[i], polygon!!.ypoints[i], CENTER.x, CENTER.y)
-    }
-
-    internal fun generate() {
-        do {
-            generatePoints()
-            Collections.sort(points)
-        } while (isInvalid())
-    }
 }

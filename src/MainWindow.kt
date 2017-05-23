@@ -1,6 +1,6 @@
 import web.Web
-import web.WebConfig
-import web.WebPanel
+import web.Config
+import web.Panel
 
 import java.awt.BorderLayout
 import java.awt.Container
@@ -22,7 +22,7 @@ class MainWindow constructor(web: Web) {
     private val statusLabel = JLabel("Ready")
     private val controlsPanel = ControlsPanel()
 
-    private val webPanel = WebPanel(web)
+    private val webPanel = Panel(web)
 
     init {
         createAndShowUI()
@@ -38,9 +38,9 @@ class MainWindow constructor(web: Web) {
     }
 
     private fun setUpControlsPanel() {
-        controlsPanel.sidesCountSpinner.value = WebConfig.sidesCount
-        controlsPanel.fliesCountSpinner.value = WebConfig.fliesCount
-        controlsPanel.maxLengthSpinner.value = WebConfig.maxTrappingNetLength / 1000
+        controlsPanel.sidesCountSpinner.value = Config.sidesCount
+        controlsPanel.fliesCountSpinner.value = Config.fliesCount
+        controlsPanel.maxLengthSpinner.value = Config.maxTrappingNetLength / 1000
         controlsPanel.reproduceGenerationsSpinner.value = 1
     }
 
@@ -58,17 +58,17 @@ class MainWindow constructor(web: Web) {
 
     private fun addListeners() {
         controlsPanel.drawFliesCb.addActionListener {
-            WebConfig.drawFlies = !WebConfig.drawFlies
+            Config.drawFlies = !Config.drawFlies
             frame.repaint()
         }
         controlsPanel.sidesCountSpinner.addChangeListener {
             val value = controlsPanel.sidesCountSpinner.value as Int
             try {
-                WebConfig.sidesCount = value
+                Config.sidesCount = value
                 resetWeb()
 
             } catch (e: IllegalArgumentException) {
-                controlsPanel.sidesCountSpinner.value = WebConfig.sidesCount
+                controlsPanel.sidesCountSpinner.value = Config.sidesCount
             }
 
         }
@@ -76,10 +76,10 @@ class MainWindow constructor(web: Web) {
         controlsPanel.fliesCountSpinner.addChangeListener {
             val value = controlsPanel.fliesCountSpinner.value as Int
             try {
-                WebConfig.fliesCount = value
+                Config.fliesCount = value
                 resetWeb()
             } catch (e: IllegalArgumentException) {
-                controlsPanel.fliesCountSpinner.value = WebConfig.fliesCount
+                controlsPanel.fliesCountSpinner.value = Config.fliesCount
             }
         }
         controlsPanel.reproduceGenerationsSpinner.addChangeListener {
@@ -114,9 +114,9 @@ class MainWindow constructor(web: Web) {
         controlsPanel.maxLengthSpinner.addChangeListener {
             val value = controlsPanel.maxLengthSpinner.value as Int
             try {
-                WebConfig.maxTrappingNetLength = 1000 * value
+                Config.maxTrappingNetLength = 1000 * value
             } catch (e: IllegalArgumentException) {
-                controlsPanel.maxLengthSpinner.value = WebConfig.maxTrappingNetLength / 1000
+                controlsPanel.maxLengthSpinner.value = Config.maxTrappingNetLength / 1000
             }
         }
         frame.addWindowStateListener { windowEvent ->
@@ -125,10 +125,10 @@ class MainWindow constructor(web: Web) {
                 frame.repaint()
         }
         controlsPanel.normalDistributionCb.addActionListener {
-            WebConfig.normalFliesDistribution = !WebConfig.normalFliesDistribution
+            Config.normalFliesDistribution = !Config.normalFliesDistribution
             frame.repaint()
         }
-        controlsPanel.dynamicFliesCb.addActionListener { WebConfig.dynamicFlies = controlsPanel.dynamicFliesCb.isSelected }
+        controlsPanel.dynamicFliesCb.addActionListener { Config.dynamicFlies = controlsPanel.dynamicFliesCb.isSelected }
         controlsPanel.resetBtn.addActionListener {
             resetWeb()
         }
@@ -142,7 +142,7 @@ class MainWindow constructor(web: Web) {
 
 
     private fun resetWeb() {
-        web = Web()
+        web = Web.generate()
         updateStatusBarText()
         controlsPanel.reproduceBtn.isEnabled = true
         frame.repaint()
@@ -150,7 +150,7 @@ class MainWindow constructor(web: Web) {
 
     private fun updateStatusBarText() {
         val generation = web.generation
-        val length = web.trappingNetLength
+        val length = web.trappingNet.length
 
         var efficiency = web.efficiency.toString()
         if (efficiency.length > 5)
@@ -179,7 +179,7 @@ fun main(args: Array<String>) {
         } catch (e: Exception) {
             System.err.print(e.toString())
         }
-        val web = Web()
+        val web = Web.generate()
         MainWindow(web)
     }
 }

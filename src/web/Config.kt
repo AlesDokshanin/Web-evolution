@@ -1,6 +1,6 @@
 package web
 
-object WebConfig {
+object Config {
 
     var drawFlies = true
     var dynamicFlies = false
@@ -33,6 +33,6 @@ object WebConfig {
             field = value
         }
 
-    internal val minAngleBetweenSkeletonLines = Math.PI / (5 * WebConfig.sidesCount)
+    internal val minAngleBetweenSkeletonLines = Math.PI / (5 * Config.sidesCount)
 
 }
