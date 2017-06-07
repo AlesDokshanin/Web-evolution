@@ -5,16 +5,16 @@ import java.awt.geom.Rectangle2D
 internal class Fly(val center: PolarPoint) {
     var isCaught: Boolean? = null
 
-    val rect: Rectangle2D.Float
+    val rect: Rectangle2D.Double
         get() = generateRectangle()
 
     constructor(fly: Fly) : this(fly.center)
 
-    private fun generateRectangle(): Rectangle2D.Float {
+    private fun generateRectangle(): Rectangle2D.Double {
         val pt = center.toCartesian()
-        val r = Rectangle2D.Float(pt.x.toFloat() - FLY_SIZE / 2,
-                pt.y.toFloat() - FLY_SIZE / 2,
-                FLY_SIZE.toFloat(), FLY_SIZE.toFloat())
+        val r = Rectangle2D.Double(pt.x - FLY_SIZE / 2,
+                pt.y - FLY_SIZE / 2,
+                FLY_SIZE, FLY_SIZE)
         return r
     }
 
@@ -32,7 +32,7 @@ internal class Fly(val center: PolarPoint) {
 
             val maxDistance = maxDistanceForAngle(phi)
 
-            val distance = (random.nextDouble() * maxDistance).toInt()
+            val distance = (random.nextDouble() * maxDistance)
             val point = PolarPoint(phi, distance)
             return point
         }

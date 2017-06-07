@@ -92,11 +92,11 @@ private class SkeletonAngleMutation(web: Web) : WebMutation(web) {
                 val index = random.nextInt(Config.sidesCount)
 
                 val angle = web.skeleton.points[index].angle
-                val bound = Point((0.5 * WIDTH.toDouble() * Math.cos(angle)).toInt(), (0.5 * HEIGHT.toDouble() * Math.sin(angle)).toInt())
+                val bound = Point((0.5 * WIDTH * Math.cos(angle)).toInt(), (0.5 * HEIGHT * Math.sin(angle)).toInt())
                 val maxDistance = bound.distance(0.0, 0.0)
 
                 val lowerBound = web.trappingNet.circles.map { c -> c.points[index].distance }.max()!!.toInt()
-                web.skeleton.points[index].distance = (lowerBound + random.nextDouble() * (maxDistance - lowerBound)).toInt()
+                web.skeleton.points[index].distance = (lowerBound + random.nextDouble() * (maxDistance - lowerBound))
                 // FIXME: hangs sometimes
 
             } while (web.skeleton.isInvalid())
@@ -108,19 +108,19 @@ private class SkeletonAngleMutation(web: Web) : WebMutation(web) {
         override fun apply() {
             if (web.trappingNet.circles.size >= MIN_TRAPPING_NET_CIRCLES_COUNT) {
                 val index = random.nextInt(web.trappingNet.circles.size)
-                val deletedCircleLength = web.trappingNet.circles[index].length
+                val deletedCircleLength = web.trappingNet.circles[index].perimeter
                 web.trappingNet.circles.removeAt(index)
                 web.trappingNet.length -= deletedCircleLength
             }
         }
     }
 
-    private class VectorPointDistances private constructor(pointsCount: Int, minDistance: Int, maxDistance: Int) {
+    private class VectorPointDistances private constructor(pointsCount: Int, minDistance: Double, maxDistance: Double) {
 
-        internal val distances = mutableListOf<Int>()
+        internal val distances = mutableListOf<Double>()
         private var pointsCount: Int = pointsCount
-        private var minDistance: Int = minDistance
-        private var maxDistance: Int = maxDistance
+        private var minDistance: Double = minDistance
+        private var maxDistance: Double = maxDistance
 
 
         init {
@@ -129,7 +129,7 @@ private class SkeletonAngleMutation(web: Web) : WebMutation(web) {
 
         private fun generate() {
             while (distances.size < pointsCount) {
-                val newDistance = minDistance + random.nextInt(maxDistance - minDistance)
+                val newDistance = minDistance + random.nextDouble() * (maxDistance - minDistance)
                 distances.add(newDistance)
             }
             distances.sort()
@@ -137,7 +137,7 @@ private class SkeletonAngleMutation(web: Web) : WebMutation(web) {
 
 
         companion object Factory {
-            internal fun generate(pointsCount: Int, maxDistance: Int, minDistance: Int = 0): VectorPointDistances {
+            internal fun generate(pointsCount: Int, maxDistance: Double, minDistance: Double = 0.0): VectorPointDistances {
                 return VectorPointDistances(pointsCount, minDistance, maxDistance)
             }
         }
@@ -170,7 +170,7 @@ private class TrappingNetVectorRescaleMutation(web: Web): WebMutation(web) {
         val factor = minFactor + random.nextDouble() * (maxFactor - minFactor)
         for(circle in web.trappingNet.circles) {
             val point = circle.points[vectorIndex]
-            point.distance = (point.distance * factor).toInt()
+            point.distance = (point.distance * factor)
             circle.save()
         }
         web.trappingNet.recalculateLength()

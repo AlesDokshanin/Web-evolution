@@ -12,7 +12,7 @@ object Config {
         set(value) {
             when (value) {
                 in MAX_TRAPPING_NET_LENGTH_LOWER..MAX_TRAPPING_NET_LENGTH_UPPER -> field = value
-                else -> throw IllegalArgumentException("Invalid max trapping net length.")
+                else -> throw IllegalArgumentException("Invalid max trapping net perimeter.")
             }
         }
 

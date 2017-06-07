@@ -1,11 +1,7 @@
 package web
 
-import java.awt.Color
-import java.awt.Point
-
-internal val WIDTH = 800
-internal val HEIGHT = 800
-internal val CENTER: Point = Point(WIDTH / 2, HEIGHT / 2)
+internal val WIDTH: Double = 100.0
+internal val HEIGHT: Double = 100.0
 internal val MIN_TRAPPING_NET_CIRCLES_COUNT = 2
 internal val MIN_SKELETON_DISTANCE_FROM_CENTER = (Math.min(HEIGHT, WIDTH) / 5)
 internal val MIN_TRAPPING_NET_CIRCLE_DISTANCE = Math.min(WIDTH, HEIGHT) / 75

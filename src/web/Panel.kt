@@ -15,21 +15,20 @@ class Panel(web: Web) : JPanel() {
     }
 
     override fun getPreferredSize(): Dimension {
-        return Dimension(PANEL_WIDTH, PANEL_HEIGHT)
+        return Dimension(800, 800)
     }
 
     private fun drawBackground(g2: Graphics2D) {
         g2.color = BG_COLOR
-        g2.fillRect(0, 0, PANEL_WIDTH, PANEL_HEIGHT)
+        g2.fill(bounds)
     }
 
     companion object {
-        internal val PANEL_WIDTH = 800
-        internal val PANEL_HEIGHT = 800
-        private val BG_COLOR = Color.white
+        private val BG_COLOR = Color.WHITE
     }
 
     internal fun draw(g: Graphics2D) {
-        WebDrawer(g).draw(web, Config.drawFlies)
+        g.color = Color.BLACK
+        WebDrawer(g).draw(web, Config.drawFlies, bounds)
     }
 }

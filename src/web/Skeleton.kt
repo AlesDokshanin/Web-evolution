@@ -1,6 +1,7 @@
 package web
 
 import java.awt.*
+import java.awt.geom.Point2D
 import java.util.*
 
 internal class Skeleton private constructor() {
@@ -26,7 +27,7 @@ internal class Skeleton private constructor() {
         val maxDistance = maxDistanceForAngle(angle)
 
         val distance = (MIN_SKELETON_DISTANCE_FROM_CENTER +
-                (maxDistance - MIN_SKELETON_DISTANCE_FROM_CENTER) * random.nextDouble()).toInt()
+                (maxDistance - MIN_SKELETON_DISTANCE_FROM_CENTER) * random.nextDouble())
 
         return PolarPoint(angle, distance)
     }
@@ -41,7 +42,7 @@ internal class Skeleton private constructor() {
 
         for (dx in -1..1) {
             for (dy in -1..1) {
-                val p = Point(dx * shift, dy * shift)
+                val p = Point2D.Double(dx * shift, dy * shift)
                 if (!polygon.contains(p))
                     return false
             }

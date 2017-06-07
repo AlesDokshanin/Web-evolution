@@ -4,12 +4,12 @@ import java.awt.geom.Line2D
 
 internal class TrappingNetCircle private constructor() {
     internal val points = mutableListOf<PolarPoint>()
-    internal var length = 0
+    internal var perimeter = 0.0
         private set
 
     constructor(circle: TrappingNetCircle): this() {
         circle.points.forEach { pt -> points.add(PolarPoint(pt)) }
-        calculateLength()
+        calculatePerimeter()
     }
 
     companion object Factory {
@@ -21,16 +21,16 @@ internal class TrappingNetCircle private constructor() {
         }
     }
 
-    internal fun calculateLength() {
-        length = (0..points.lastIndex).map { i ->
+    internal fun calculatePerimeter() {
+        perimeter = (0..points.lastIndex).map { i ->
             val p1 = points[i]
             val p2 = points[(i + 1) % points.size]
             p1.distanceTo(p2)
-        }.sum().toInt()
+        }.sum()
     }
 
     internal fun save() {
-        calculateLength()
+        calculatePerimeter()
     }
 
     internal fun generate(skeleton: Skeleton) {
@@ -38,7 +38,7 @@ internal class TrappingNetCircle private constructor() {
             val lowerBound = 0
             val upperBound = skeleton.points[i].distance
             val angle = skeleton.points[i].angle
-            val distance = (lowerBound + random.nextDouble() * (upperBound - lowerBound)).toInt()
+            val distance = (lowerBound + random.nextDouble() * (upperBound - lowerBound))
             points.add(PolarPoint(angle, distance))
         }
         save()

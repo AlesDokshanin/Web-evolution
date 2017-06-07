@@ -2,7 +2,7 @@ package web
 
 import java.awt.Point
 
-internal class PolarPoint(internal var angle: Double, internal var distance: Int) : Comparable<PolarPoint> {
+internal class PolarPoint(internal var angle: Double, internal var distance: Double) : Comparable<PolarPoint> {
     constructor(ppt: PolarPoint) : this(ppt.angle, ppt.distance)
 
     override fun compareTo(other: PolarPoint): Int {
@@ -24,10 +24,3 @@ internal class PolarPoint(internal var angle: Double, internal var distance: Int
     }
 }
 
-private fun angleFromCartesian(x: Int, y: Int): Double {
-    return Math.atan(y.toDouble() / x)
-}
-
-private fun distanceFromCartesian(x: Int, y: Int): Int {
-    return Math.sqrt(x.toDouble() * x + y * y).toInt()
-}

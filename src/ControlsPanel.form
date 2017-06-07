@@ -74,7 +74,7 @@
             </constraints>
             <properties>
               <labelFor value="9af68"/>
-              <text value="Max length"/>
+              <text value="Max perimeter"/>
             </properties>
           </component>
           <component id="9af68" class="javax.swing.JSpinner" binding="maxLengthSpinner">
