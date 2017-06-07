@@ -49,7 +49,7 @@ internal class Skeleton private constructor() {
         return true
     }
 
-    internal fun generatePolygon(): Polygon {
+    private fun generatePolygon(): Polygon {
         val polygon = buildPolygonFromPolarPoints(this.points)
         return polygon
     }
@@ -69,6 +69,4 @@ internal class Skeleton private constructor() {
             points.add(p)
         }
     }
-
-
 }
