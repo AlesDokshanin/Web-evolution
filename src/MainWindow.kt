@@ -40,7 +40,7 @@ class MainWindow constructor(web: Web) {
     private fun setUpControlsPanel() {
         controlsPanel.sidesCountSpinner.value = Config.sidesCount
         controlsPanel.fliesCountSpinner.value = Config.fliesCount
-        controlsPanel.maxLengthSpinner.value = Config.maxTrappingNetLength / 1000
+        controlsPanel.maxLengthSpinner.value = Config.maxTrappingNetPerimeter
         controlsPanel.reproduceGenerationsSpinner.value = 1
     }
 
@@ -114,9 +114,9 @@ class MainWindow constructor(web: Web) {
         controlsPanel.maxLengthSpinner.addChangeListener {
             val value = controlsPanel.maxLengthSpinner.value as Int
             try {
-                Config.maxTrappingNetLength = 1000 * value
+                Config.maxTrappingNetPerimeter = value
             } catch (e: IllegalArgumentException) {
-                controlsPanel.maxLengthSpinner.value = Config.maxTrappingNetLength / 1000
+                controlsPanel.maxLengthSpinner.value = Config.maxTrappingNetPerimeter
             }
         }
         frame.addWindowStateListener { windowEvent ->
@@ -135,6 +135,10 @@ class MainWindow constructor(web: Web) {
     }
 
     private fun reproduceWeb() {
+        // FIXME: this code doesn't belong here
+        // It'd be great to hide all genetic algorithm logic to something like ExperimentController class
+        // who should also check if the algorithm is stuck at local extremum
+        // but I don't care anymore
         val children = web.reproduce()
         Collections.sort(children, Collections.reverseOrder<Any>())
         web = children[0]
@@ -150,13 +154,13 @@ class MainWindow constructor(web: Web) {
 
     private fun updateStatusBarText() {
         val generation = web.generation
-        val length = web.trappingNet.length
+        val perimeter = web.trappingNet.perimeter
 
         var efficiency = web.efficiency.toString()
         if (efficiency.length > 5)
             efficiency = efficiency.substring(0, 5)
 
-        statusLabel.text = "Generation: $generation. Efficiency: $efficiency. Length: $length."
+        statusLabel.text = "Generation: $generation. Efficiency: $efficiency. Perimeter: $perimeter."
     }
 
     private fun setStatusBarWorkingText(percentsDone: Int) {

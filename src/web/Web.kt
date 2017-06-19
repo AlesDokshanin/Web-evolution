@@ -51,7 +51,7 @@ class Web internal constructor(val skeleton: Skeleton, val trappingNet: Trapping
     override fun compareTo(other: Web): Int {
         var value = java.lang.Double.compare(this.efficiency, other.efficiency)
         if (value == 0)
-            value = -1 * java.lang.Double.compare(this.trappingNet.length.toDouble(), other.trappingNet.length.toDouble())
+            value = -1 * java.lang.Double.compare(this.trappingNet.perimeter.toDouble(), other.trappingNet.perimeter.toDouble())
         return value
     }
 
@@ -77,7 +77,7 @@ class Web internal constructor(val skeleton: Skeleton, val trappingNet: Trapping
 
     internal fun calculateEfficiency() {
         val caught = calculateCaughtFlies()
-        efficiency = caught.toDouble() + (1 / trappingNet.length)
+        efficiency = caught.toDouble() + (1 / trappingNet.perimeter)
     }
 
     private fun calculateCaughtFlies(): Int {

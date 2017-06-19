@@ -7,7 +7,7 @@ object Config {
     var normalFliesDistribution = true
 
 
-    internal var maxTrappingNetLength = 5 * 1000
+    internal var maxTrappingNetPerimeter = 1500
         @Throws(IllegalArgumentException::class)
         set(value) {
             when (value) {
@@ -24,7 +24,7 @@ object Config {
             else -> throw IllegalArgumentException("Invalid web sides count: $value (should be in range [$MIN_SIDES, $MAX_SIDES].")
         }
 
-    var fliesCount = 100
+    var fliesCount = 200
         @Throws(IllegalArgumentException::class)
         set(value) {
             if (value < MIN_FLIES_COUNT || value > MAX_FLIES_COUNT) {

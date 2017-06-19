@@ -110,7 +110,7 @@ private class SkeletonAngleMutation(web: Web) : WebMutation(web) {
                 val index = random.nextInt(web.trappingNet.circles.size)
                 val deletedCircleLength = web.trappingNet.circles[index].perimeter
                 web.trappingNet.circles.removeAt(index)
-                web.trappingNet.length -= deletedCircleLength
+                web.trappingNet.perimeter -= deletedCircleLength
             }
         }
     }

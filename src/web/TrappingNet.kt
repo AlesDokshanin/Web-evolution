@@ -1,7 +1,7 @@
 package web
 
 internal class TrappingNet private constructor() {
-    internal var length: Double = 0.0
+    internal var perimeter: Double = 0.0
     internal val circles = mutableListOf<TrappingNetCircle>()
 
     companion object Factory {
@@ -14,12 +14,12 @@ internal class TrappingNet private constructor() {
     }
 
     internal constructor(net: TrappingNet) : this() {
-        this.length = net.length
+        this.perimeter = net.perimeter
         net.circles.forEach { circle -> this.circles.add(TrappingNetCircle(circle)) }
     }
 
     internal fun recalculateLength() {
-        this.length = circles.map { it.perimeter }.sum()
+        this.perimeter = circles.map { it.perimeter }.sum()
     }
 
     private fun generateCircles(skeleton: Skeleton) {
@@ -30,13 +30,13 @@ internal class TrappingNet private constructor() {
     }
 
     internal fun canAddCircle(skeleton: Skeleton): Boolean {
-        return length < Config.maxTrappingNetLength
+        return perimeter < Config.maxTrappingNetPerimeter
     }
 
     internal fun addNewCircle(skeleton: Skeleton) {
         val circle = TrappingNetCircle.createOn(skeleton)
         circles.add(circle)
-        length += circle.perimeter
+        perimeter += circle.perimeter
     }
 
     internal fun tryToCatch(fly: Fly): Boolean {

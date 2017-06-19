@@ -26,8 +26,7 @@ internal class Skeleton private constructor() {
         val angle = random.nextDouble() * 2 * Math.PI
         val maxDistance = maxDistanceForAngle(angle)
 
-        val distance = (MIN_SKELETON_DISTANCE_FROM_CENTER +
-                (maxDistance - MIN_SKELETON_DISTANCE_FROM_CENTER) * random.nextDouble())
+        val distance = maxDistance * random.nextDouble()
 
         return PolarPoint(angle, distance)
     }
@@ -37,12 +36,12 @@ internal class Skeleton private constructor() {
     }
 
     private fun centerFitsIntoPolygon(): Boolean {
-        val shift = MIN_TRAPPING_NET_CIRCLE_DISTANCE
+        val shift = 1
         val polygon = generatePolygon()
 
         for (dx in -1..1) {
             for (dy in -1..1) {
-                val p = Point2D.Double(dx * shift, dy * shift)
+                val p = Point2D.Double(dx.toDouble() * shift, dy.toDouble() * shift)
                 if (!polygon.contains(p))
                     return false
             }
